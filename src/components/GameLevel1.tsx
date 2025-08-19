@@ -42,7 +42,7 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
   onSoundToggle,
   // playerName,
 }) => {
-  const { play, loop, stop, unlock } = useSound(soundEnabled);
+  const { play, stop, unlock } = useSound(soundEnabled);
   const [showInstructions, setShowInstructions] = useState(true);
   const [showResults, setShowResults] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
@@ -320,7 +320,6 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     checkGameCompletion();
   }, [checkGameCompletion]);
 
-
   const handleMouseDown = (e: React.MouseEvent, fruitId: string) => {
     if (!gameStarted || gameCompleted) return;
 
@@ -561,7 +560,10 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
 
   if (showInstructions) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-300 via-green-200 to-green-300">
+      <div
+        className="relative min-h-screen overflow-hidden bg-center bg-cover"
+        style={{ backgroundImage: "url(/images/bg-level.png)" }}
+      >
         {/* Background overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-50"></div>
 
@@ -652,7 +654,10 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
 
   if (showResults) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-300 via-green-200 to-green-300">
+      <div
+        className="relative min-h-screen overflow-hidden bg-center bg-cover"
+        style={{ backgroundImage: "url(/images/bg-level.png)" }}
+      >
         {/* Background overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-30"></div>
 
@@ -713,7 +718,10 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-300 via-green-200 to-green-300">
+    <div
+      className="relative min-h-screen overflow-hidden bg-center bg-cover"
+      style={{ backgroundImage: "url(/images/bg-level.png)" }}
+    >
       {/* Background elements */}
       <div className="absolute inset-0">
         <div className="absolute w-8 h-12 rounded-full left-4 top-20 bg-amber-700"></div>

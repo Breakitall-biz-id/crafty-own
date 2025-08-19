@@ -99,6 +99,8 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
   const [draggedFruit, setDraggedFruit] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const gameAreaRef = useRef<HTMLDivElement>(null);
+  const leftPanelRef = useRef<HTMLDivElement>(null);
+  const rightPanelRef = useRef<HTMLDivElement>(null);
 
   const startGame = async () => {
     if (soundEnabled) {
@@ -134,6 +136,57 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
     }
   }, [fruits, gameCompleted, startTime, mistakes]);
 
+  // Place fruits inside the left panel neatly once the card/panels are laid out
+  useEffect(() => {
+    if (!gameStarted) return;
+    const place = () => {
+      const gameRect = gameAreaRef.current?.getBoundingClientRect();
+      const leftRect = leftPanelRef.current?.getBoundingClientRect();
+      if (!gameRect || !leftRect) return;
+
+      const cols = [
+        leftRect.left + leftRect.width * 0.35,
+        leftRect.left + leftRect.width * 0.65,
+      ];
+      const rows = [
+        leftRect.top + leftRect.height * 0.35,
+        leftRect.top + leftRect.height * 0.65,
+      ];
+      const half = 40; // fruit size ~80px (w-20 h-20)
+
+      const positions: Record<string, { x: number; y: number }> = {
+        pineapple: {
+          x: cols[0] - gameRect.left - half,
+          y: rows[0] - gameRect.top - half,
+        },
+        watermelon: {
+          x: cols[1] - gameRect.left - half,
+          y: rows[0] - gameRect.top - half,
+        },
+        grapes: {
+          x: cols[0] - gameRect.left - half,
+          y: rows[1] - gameRect.top - half,
+        },
+        apple: {
+          x: cols[1] - gameRect.left - half,
+          y: rows[1] - gameRect.top - half,
+        },
+      };
+
+      setFruits((prev) => prev.map((f) => ({ ...f, ...positions[f.type] })));
+    };
+
+    const id = requestAnimationFrame(place);
+    const onResize = () => place();
+    window.addEventListener("resize", onResize);
+    window.addEventListener("orientationchange", onResize);
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("orientationchange", onResize);
+    };
+  }, [gameStarted]);
+
   // After the game is marked complete, show results after a short delay and play sound once
   useEffect(() => {
     if (!gameCompleted) return;
@@ -145,63 +198,7 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
     return () => clearTimeout(t);
   }, [gameCompleted, soundEnabled, play, stop]);
 
-  useEffect(() => {
-    // Initialize fruit positions when game starts
-    if (gameStarted && gameAreaRef.current) {
-      const rect = gameAreaRef.current.getBoundingClientRect();
-
-      // Responsive positioning
-      const isMobile = window.innerWidth < 768;
-      const isLandscape = window.innerWidth > window.innerHeight;
-
-      let positions: { [key: string]: { x: number; y: number } };
-
-      if (isMobile && !isLandscape) {
-        // Mobile Portrait: Vertical layout (top panel)
-        const topPanelX = rect.width / 2 - 140; // Center horizontally
-        const topPanelY = 60; // Top position
-
-        positions = {
-          pineapple: { x: topPanelX + 60, y: topPanelY + 60 },
-          watermelon: { x: topPanelX + 180, y: topPanelY + 60 },
-          grapes: { x: topPanelX + 60, y: topPanelY + 180 },
-          apple: { x: topPanelX + 180, y: topPanelY + 180 },
-        };
-      } else {
-        // Desktop or Mobile Landscape: Horizontal layout (left panel)
-        const panelWidth = isMobile ? 280 : 320;
-        const panelHeight = isMobile ? 300 : 384;
-        const leftPanelX = rect.width / 2 - 24 - panelWidth;
-        const leftPanelY = rect.height / 2 - panelHeight / 2;
-
-        positions = {
-          pineapple: {
-            x: leftPanelX + (isMobile ? 60 : 80),
-            y: leftPanelY + (isMobile ? 60 : 80),
-          },
-          watermelon: {
-            x: leftPanelX + (isMobile ? 180 : 200),
-            y: leftPanelY + (isMobile ? 60 : 80),
-          },
-          grapes: {
-            x: leftPanelX + (isMobile ? 60 : 80),
-            y: leftPanelY + (isMobile ? 180 : 200),
-          },
-          apple: {
-            x: leftPanelX + (isMobile ? 180 : 200),
-            y: leftPanelY + (isMobile ? 180 : 200),
-          },
-        };
-      }
-
-      setFruits((prev) =>
-        prev.map((f) => {
-          return { ...f, ...positions[f.type] };
-        })
-      );
-    }
-  }, [gameStarted]);
-
+  // Removed old positioner; now positions are based on panel refs above
 
   const handleMouseDown = (e: React.MouseEvent, fruitId: string) => {
     if (!gameStarted || gameCompleted) return;
@@ -256,8 +253,7 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
     const gameAreaRect = gameAreaRef.current?.getBoundingClientRect();
     if (!gameAreaRect) return;
 
-    const isMobile = window.innerWidth < 768;
-    const isLandscape = window.innerWidth > window.innerHeight;
+    const rightRect = rightPanelRef.current?.getBoundingClientRect();
 
     let droppedOnShadow = false;
 
@@ -265,13 +261,12 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
       if (shadow.isMatched) continue;
 
       let shadowAbsoluteX: number, shadowAbsoluteY: number;
-
-      if (isMobile && !isLandscape) {
-        // Mobile Portrait: Bottom panel
-        shadowAbsoluteX = gameAreaRect.width / 2 - 140 + shadow.x;
-        shadowAbsoluteY = 320 + shadow.y;
+      if (rightRect) {
+        // Convert right panel local coords to game-area coords
+        shadowAbsoluteX = rightRect.left - gameAreaRect.left + shadow.x;
+        shadowAbsoluteY = rightRect.top - gameAreaRect.top + shadow.y;
       } else {
-        // Desktop or Mobile Landscape: Right panel
+        // Fallback: assume centered panels similar to previous layout
         shadowAbsoluteX = gameAreaRect.width / 2 + 24 + shadow.x;
         shadowAbsoluteY = gameAreaRect.height / 2 - 192 + shadow.y;
       }
@@ -301,103 +296,94 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
           );
           play("match");
         } else {
-          // Wrong match
           setMistakes((prev) => prev + 1);
           setShowWrongFeedback(draggedFruit);
           play("error");
           setTimeout(() => setShowWrongFeedback(null), 1000);
 
-          let originalPositions: Record<string, { x: number; y: number }>;
-          if (isMobile && !isLandscape) {
-            // Mobile Portrait: Top panel
-            const topPanelX = gameAreaRect.width / 2 - 140;
-            const topPanelY = 60;
-            originalPositions = {
-              pineapple: { x: topPanelX + 60, y: topPanelY + 60 },
-              watermelon: { x: topPanelX + 180, y: topPanelY + 60 },
-              grapes: { x: topPanelX + 60, y: topPanelY + 180 },
-              apple: { x: topPanelX + 180, y: topPanelY + 180 },
-            };
-          } else {
-            // Desktop or Mobile Landscape: Left panel
-            const panelWidth = isMobile ? 280 : 320;
-            const panelHeight = isMobile ? 300 : 384;
-            const leftPanelX = gameAreaRect.width / 2 - 24 - panelWidth;
-            const leftPanelY = gameAreaRect.height / 2 - panelHeight / 2;
-            originalPositions = {
-              pineapple: {
-                x: leftPanelX + (isMobile ? 60 : 80),
-                y: leftPanelY + (isMobile ? 60 : 80),
-              },
-              watermelon: {
-                x: leftPanelX + (isMobile ? 180 : 200),
-                y: leftPanelY + (isMobile ? 60 : 80),
-              },
-              grapes: {
-                x: leftPanelX + (isMobile ? 60 : 80),
-                y: leftPanelY + (isMobile ? 180 : 200),
-              },
-              apple: {
-                x: leftPanelX + (isMobile ? 180 : 200),
-                y: leftPanelY + (isMobile ? 180 : 200),
-              },
-            };
+          // Wrong: return to left panel positions via leftPanelRef
+          const leftRect = leftPanelRef.current?.getBoundingClientRect();
+          if (leftRect) {
+            const cols = [
+              leftRect.left + leftRect.width * 0.35,
+              leftRect.left + leftRect.width * 0.65,
+            ];
+            const rows = [
+              leftRect.top + leftRect.height * 0.35,
+              leftRect.top + leftRect.height * 0.65,
+            ];
+            const half = 40;
+            const originalPositions: Record<string, { x: number; y: number }> =
+              {
+                pineapple: {
+                  x: cols[0] - gameAreaRect.left - half,
+                  y: rows[0] - gameAreaRect.top - half,
+                },
+                watermelon: {
+                  x: cols[1] - gameAreaRect.left - half,
+                  y: rows[0] - gameAreaRect.top - half,
+                },
+                grapes: {
+                  x: cols[0] - gameAreaRect.left - half,
+                  y: rows[1] - gameAreaRect.top - half,
+                },
+                apple: {
+                  x: cols[1] - gameAreaRect.left - half,
+                  y: rows[1] - gameAreaRect.top - half,
+                },
+              };
+            setFruits((prev) =>
+              prev.map((f) =>
+                f.id === draggedFruit
+                  ? { ...f, isDragging: false, ...originalPositions[f.type] }
+                  : f
+              )
+            );
           }
-          setFruits((prev) =>
-            prev.map((f) =>
-              f.id === draggedFruit
-                ? { ...f, isDragging: false, ...originalPositions[f.type] }
-                : f
-            )
-          );
         }
         break;
       }
     }
 
     if (!droppedOnShadow) {
-      // Return to original position if not dropped on any shadow
-      let originalPositions: Record<string, { x: number; y: number }>;
-      if (isMobile && !isLandscape) {
-        const topPanelX = gameAreaRect.width / 2 - 140;
-        const topPanelY = 60;
-        originalPositions = {
-          pineapple: { x: topPanelX + 60, y: topPanelY + 60 },
-          watermelon: { x: topPanelX + 180, y: topPanelY + 60 },
-          grapes: { x: topPanelX + 60, y: topPanelY + 180 },
-          apple: { x: topPanelX + 180, y: topPanelY + 180 },
-        };
-      } else {
-        const panelWidth = isMobile ? 280 : 320;
-        const panelHeight = isMobile ? 300 : 384;
-        const leftPanelX = gameAreaRect.width / 2 - 24 - panelWidth;
-        const leftPanelY = gameAreaRect.height / 2 - panelHeight / 2;
-        originalPositions = {
+      // Snap back to left panel grid placement
+      const leftRect = leftPanelRef.current?.getBoundingClientRect();
+      if (leftRect) {
+        const cols = [
+          leftRect.left + leftRect.width * 0.35,
+          leftRect.left + leftRect.width * 0.65,
+        ];
+        const rows = [
+          leftRect.top + leftRect.height * 0.35,
+          leftRect.top + leftRect.height * 0.65,
+        ];
+        const half = 40;
+        const originalPositions: Record<string, { x: number; y: number }> = {
           pineapple: {
-            x: leftPanelX + (isMobile ? 60 : 80),
-            y: leftPanelY + (isMobile ? 60 : 80),
+            x: cols[0] - gameAreaRect.left - half,
+            y: rows[0] - gameAreaRect.top - half,
           },
           watermelon: {
-            x: leftPanelX + (isMobile ? 180 : 200),
-            y: leftPanelY + (isMobile ? 60 : 80),
+            x: cols[1] - gameAreaRect.left - half,
+            y: rows[0] - gameAreaRect.top - half,
           },
           grapes: {
-            x: leftPanelX + (isMobile ? 60 : 80),
-            y: leftPanelY + (isMobile ? 180 : 200),
+            x: cols[0] - gameAreaRect.left - half,
+            y: rows[1] - gameAreaRect.top - half,
           },
           apple: {
-            x: leftPanelX + (isMobile ? 180 : 200),
-            y: leftPanelY + (isMobile ? 180 : 200),
+            x: cols[1] - gameAreaRect.left - half,
+            y: rows[1] - gameAreaRect.top - half,
           },
         };
+        setFruits((prev) =>
+          prev.map((f) =>
+            f.id === draggedFruit
+              ? { ...f, isDragging: false, ...originalPositions[f.type] }
+              : f
+          )
+        );
       }
-      setFruits((prev) =>
-        prev.map((f) =>
-          f.id === draggedFruit
-            ? { ...f, isDragging: false, ...originalPositions[f.type] }
-            : f
-        )
-      );
     }
 
     setDraggedFruit(null);
@@ -468,7 +454,7 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
           fruit.isDragging ? "scale-110 z-20" : "hover:scale-105 z-10"
         } ${fruit.isMatched ? "cursor-default opacity-80" : ""}`}
         style={{
-          left: fruit.x,
+          left: fruit.x - 20,
           top: fruit.y,
           pointerEvents: fruit.isMatched ? "none" : "auto",
           userSelect: "none",
@@ -521,7 +507,10 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
 
   if (showInstructions) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-300 via-green-200 to-green-300">
+      <div
+        className="relative min-h-screen overflow-hidden bg-center bg-cover"
+        style={{ backgroundImage: "url(/images/bg-level.png)" }}
+      >
         {/* Background overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-50"></div>
 
@@ -641,7 +630,10 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
 
   if (showResults) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-300 via-green-200 to-green-300">
+      <div
+        className="relative min-h-screen overflow-hidden bg-center bg-cover"
+        style={{ backgroundImage: "url(/images/bg-level.png)" }}
+      >
         {/* Background overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-30"></div>
 
@@ -702,7 +694,10 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-sky-300 via-green-200 to-green-300">
+    <div
+      className="relative min-h-screen overflow-hidden bg-center bg-cover"
+      style={{ backgroundImage: "url(/images/bg-level.png)" }}
+    >
       {/* Top Navigation */}
       <div className="absolute z-20 flex items-center justify-between top-4 left-4 right-4">
         <button
@@ -724,18 +719,12 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
         </button>
       </div>
 
-      {/* Game Stats */}
-      <div className="absolute z-20 p-1 text-xs transform -translate-x-1/2 bg-white rounded-lg shadow-lg top-12 md:top-20 left-1/2 bg-opacity-90 md:p-3 md:text-sm">
-        <div className="text-xs font-bold text-center text-gray-700 md:text-sm">
-          <div>Waktu: {Math.round((Date.now() - startTime) / 1000)}s</div>
-          <div>Kesalahan: {mistakes}</div>
-        </div>
-      </div>
+     
 
       {/* Game Area */}
       <div
         ref={gameAreaRef}
-        className="absolute inset-0 overflow-visible top-20 md:top-32"
+        className="absolute inset-0 top-16 md:top-20"
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
@@ -743,19 +732,33 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
         onTouchEnd={handleTouchEnd}
         style={{ userSelect: "none", position: "relative" }}
       >
-        {/* Fruits - Rendered at top level to prevent clipping */}
-        {fruits.map(renderFruit)}
+        {/* Centered white card like mock */}
+        <div className="relative w-[96%] mx-auto h-[calc(100vh-6rem)] md:h-[calc(100vh-7rem)] mt-2 md:mt-4 bg-white rounded-[32px] shadow-lg overflow-hidden">
+          {/* Fruits - keep at top level to avoid clipping */}
+          {fruits.map(renderFruit)}
 
-        {/* Game Panels Container - Responsive Layout */}
-        <div className="relative flex flex-col items-center justify-center w-full h-full gap-4 px-4 pointer-events-none portrait:flex-col landscape:flex-row md:gap-8 md:px-8">
-          {/* Top/Left Panel - Fruits */}
-          <div className="relative p-3 bg-yellow-100 shadow-lg w-70 md:w-80 h-60 portrait:h-60 landscape:h-75 md:landscape:h-96 rounded-3xl md:p-4">
-            {/* This panel is just for visual background */}
+          {/* Two yellow panels */}
+          <div className="absolute inset-0 flex items-center justify-center gap-6 pt-16 md:gap-10 md:pt-20">
+            {/* Left (fruits) */}
+            <div
+              ref={leftPanelRef}
+              className="relative h-64 p-4 bg-yellow-100 shadow-lg rounded-3xl w-72 md:w-80 md:h-96"
+            ></div>
+            {/* Right (shadows) */}
+            <div
+              ref={rightPanelRef}
+              className="relative h-64 p-4 bg-yellow-100 shadow-lg rounded-3xl w-72 md:w-80 md:h-96"
+            >
+              {shadows.map(renderShadow)}
+            </div>
           </div>
 
-          {/* Bottom/Right Panel - Shadows */}
-          <div className="relative p-3 bg-yellow-100 shadow-lg w-70 md:w-80 h-60 portrait:h-60 landscape:h-75 md:landscape:h-96 rounded-3xl md:p-4">
-            {shadows.map(renderShadow)}
+          {/* Small stats pill */}
+          <div className="absolute p-2 text-xs rounded-lg shadow bg-white/80 top-4 right-4">
+            <div className="font-bold text-gray-700">
+              <div>Waktu: {Math.round((Date.now() - startTime) / 1000)}s</div>
+              <div>Kesalahan: {mistakes}</div>
+            </div>
           </div>
         </div>
       </div>

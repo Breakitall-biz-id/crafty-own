@@ -57,7 +57,7 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
   const gameAreaRef = useRef<HTMLDivElement>(null);
   const boardRef = useRef<HTMLDivElement>(null);
   const appleRef = useRef<HTMLDivElement>(null);
-  const { play, loop, stop, unlock } = useSound(soundEnabled);
+  const { play, stop, unlock } = useSound(soundEnabled);
 
   // Define cutting lines (3 vertical lines on the apple)
   const [cutLines, setCutLines] = useState<CutLine[]>([
@@ -98,7 +98,7 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
         /* ignore */
       }
       play("start");
-      loop("bgm", { volume: 0.35 });
+      play("bgm");
     }
 
     setShowInstructions(false);
@@ -447,7 +447,7 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
               key={`completed-${line.id}`}
               className="absolute z-30 bg-green-500 rounded-full pointer-events-none"
               style={{
-                left: lineX - 2,
+                left: lineX - 15,
                 top: startY,
                 width: "4px",
                 height: endY - startY,
@@ -475,7 +475,7 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
               key={`progress-${line.id}`}
               className="absolute z-30 bg-yellow-500 rounded-full pointer-events-none animate-pulse"
               style={{
-                left: lineX - 2,
+                left: lineX - 15,
                 top: startY,
                 width: "4px",
                 height: progressHeight,
@@ -511,11 +511,12 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
     onNextLevel();
   };
 
-
-
   if (showInstructions) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-green-300 via-green-200 to-amber-100">
+      <div
+        className="relative min-h-screen overflow-hidden bg-center bg-cover"
+        style={{ backgroundImage: "url(/images/bg-level.png)" }}
+      >
         {/* Background overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-50"></div>
 
@@ -612,7 +613,10 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
 
   if (showResults) {
     return (
-      <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-green-300 via-green-200 to-amber-100">
+      <div
+        className="relative min-h-screen overflow-hidden bg-center bg-cover"
+        style={{ backgroundImage: "url(/images/bg-level.png)" }}
+      >
         {/* Background overlay */}
         <div className="absolute inset-0 bg-black bg-opacity-30"></div>
 
@@ -678,7 +682,10 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-green-300 via-green-200 to-amber-100">
+    <div
+      className="relative min-h-screen overflow-hidden bg-center bg-cover"
+      style={{ backgroundImage: "url(/images/bg-level.png)" }}
+    >
       {/* Background trees */}
       <div className="absolute inset-0">
         <div className="absolute w-8 h-12 rounded-full left-4 top-20 bg-amber-700"></div>
