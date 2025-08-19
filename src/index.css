@@ -1,0 +1,118 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:wght@400;700&display=swap');
+
+* {
+  font-family: 'Comic Neue', cursive;
+  touch-action: manipulation;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+/* Custom utilities for perspective */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.rotateX-45 {
+  transform: rotateX(45deg);
+}
+
+/* Prevent text selection on game elements */
+.select-none {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Prevent touch scrolling and zooming on game elements */
+.touch-none {
+  touch-action: none;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Smooth transitions for all interactive elements */
+button {
+  transition: all 0.2s ease-in-out;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Mobile responsive utilities */
+@media (max-width: 768px) {
+  .w-70 {
+    width: 17.5rem;
+  }
+  
+  .h-75 {
+    height: 18.75rem;
+  }
+  
+  .h-60 {
+    height: 15rem;
+  }
+}
+
+/* Responsive adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+  .landscape\:scale-75 {
+    transform: scale(0.75);
+  }
+  
+  .landscape\:text-4xl {
+    font-size: 2.25rem;
+    line-height: 2.5rem;
+  }
+  
+  .landscape\:h-75 {
+    height: 18.75rem;
+  }
+  
+  .landscape\:flex-row {
+    flex-direction: row;
+  }
+}
+
+@media (orientation: portrait) {
+  .portrait\:flex-col {
+    flex-direction: column;
+  }
+  
+  .portrait\:gap-12 {
+    gap: 3rem;
+  }
+  
+  .portrait\:h-60 {
+    height: 15rem;
+  }
+}
+
+/* Animation keyframes */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+.animate-sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
