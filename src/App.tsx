@@ -5,6 +5,7 @@ import NameInputScreen from "./components/NameInputScreen";
 import GameLevel1 from "./components/GameLevel1";
 import GameLevel2 from "./components/GameLevel2";
 import GameLevel3 from "./components/GameLevel3";
+import GameLevel4 from "./components/GameLevel4";
 import OrientationGate from "./components/OrientationGate";
 import { useGameState } from "./hooks/useGameState";
 import { Screen } from "./types/GameTypes";
@@ -61,7 +62,7 @@ function App() {
     mistakes: number
   ) => {
     const currentLevel =
-      currentScreen === "level1" ? 1 : currentScreen === "level2" ? 2 : 3;
+      currentScreen === "level1" ? 1 : currentScreen === "level2" ? 2 : currentScreen === "level3" ? 3 : 4;
 
     // Save level completion
     if (!gameState.completedLevels.includes(currentLevel)) {
@@ -86,13 +87,21 @@ function App() {
 
   const handleNextLevel = () => {
     const currentLevel =
-      currentScreen === "level1" ? 1 : currentScreen === "level2" ? 2 : 3;
+      currentScreen === "level1"
+        ? 1
+        : currentScreen === "level2"
+          ? 2
+          : currentScreen === "level3"
+            ? 3
+            : 4;
 
     // Navigate to next level or menu
     if (currentLevel === 1) {
       navigateTo("level2");
     } else if (currentLevel === 2) {
       navigateTo("level3");
+    } else if (currentLevel === 3) {
+      navigateTo("level4");
     } else {
       navigateTo("menu");
     }
@@ -138,6 +147,17 @@ function App() {
       case "level3":
         return (
           <GameLevel3
+            onNavigate={navigateTo}
+            onLevelComplete={handleLevelComplete}
+            onNextLevel={handleNextLevel}
+            soundEnabled={gameState.soundEnabled}
+            onSoundToggle={handleSoundToggle}
+            playerName={gameState.playerName}
+          />
+        );
+      case "level4":
+        return (
+          <GameLevel4
             onNavigate={navigateTo}
             onLevelComplete={handleLevelComplete}
             onNextLevel={handleNextLevel}

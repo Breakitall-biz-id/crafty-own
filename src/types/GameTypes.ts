@@ -14,7 +14,7 @@ export interface Level {
   isUnlocked: boolean;
 }
 
-export type Screen = 'splash' | 'menu' | 'nameInput' | 'level1' | 'level2' | 'level3' | 'about' | 'profile';
+export type Screen = 'splash' | 'menu' | 'nameInput' | 'level1' | 'level2' | 'level3' | 'level4' | 'about' | 'profile';
 
 export interface Fruit {
   id: string;
