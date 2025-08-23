@@ -48,9 +48,28 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   const { play, stop, unlock } = useSound(soundEnabled);
   const [showResults, setShowResults] = useState(false);
 
+  // Start game: play sound, bgm, reset state, close modal
+  const startGame = async () => {
+    if (soundEnabled) {
+      try {
+        await unlock();
+      } catch { }
+      play("start");
+      play("bgm");
+    }
+    setShowInstructions(false);
+    setDrawing(false);
+    setUserPath("");
+    setCompleted(false);
+    setStartTime(null);
+    setEndTime(null);
+    setStars(null);
+    setShowResults(false);
+  };
+
   // Mulai menggambar
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (completed) return;
+    if (completed || showInstructions) return;
     setDrawing(true);
     if (!startTime) setStartTime(Date.now());
     const { x, y } = getSvgCoords(e);
@@ -94,15 +113,8 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     return () => clearTimeout(t);
   }, [completed, play, stop]);
 
-  // Efek: setelah reward tampil, lanjut ke level berikutnya setelah 1.5 detik
-  useEffect(() => {
-    if (!showResults || !stars) return;
-    const t = setTimeout(() => {
-      onLevelComplete(stars, endTime && startTime ? (endTime - startTime) / 1000 : 0, 0);
-      onNextLevel();
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [showResults, stars, endTime, startTime, onLevelComplete, onNextLevel]);
+
+
   // Estimasi panjang path SVG (sederhana, hanya untuk penilaian kasar)
   function estimatePathLength(path: string): number {
     if (!path) return 0;
@@ -120,14 +132,12 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
         }
         prev = [x, y];
       } else if (type === 'Q' && nums.length === 4) {
-        // Quadratic bezier: approx as straight line from prev to end
         const [cx, cy, x, y] = nums;
         if (prev) {
           length += Math.hypot(x - prev[0], y - prev[1]);
         }
         prev = [x, y];
       } else if (type === 'C' && nums.length === 6) {
-        // Cubic bezier: approx as straight line from prev to end
         const [c1x, c1y, c2x, c2y, x, y] = nums;
         if (prev) {
           length += Math.hypot(x - prev[0], y - prev[1]);
@@ -146,19 +156,173 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     pt.x = e.clientX;
     pt.y = e.clientY;
     const cursorpt = pt.matrixTransform(svg.getScreenCTM()?.inverse());
-    // Koreksi transformasi <g>: scale(1.5) dan translate(-100, -100)
-    // Urutan transformasi: (x, y) -> (x - 100, y - 100) -> (x * 1.5, y * 1.5)
-    // Maka inversenya: (x, y) -> (x / 1.5 + 100, y / 1.5 + 100)
     const x = cursorpt.x / 1.5 + 100;
     const y = cursorpt.y / 1.5 + 100;
     return { x, y };
   }
 
+  if (showInstructions) {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center min-h-screen overflow-hidden bg-center bg-cover"
+        style={{ backgroundImage: "url(/images/bg-level.png)" }}
+      >
+        {/* Overlay hitam transparan */}
+        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
+        {/* Pohon dekorasi kiri-kanan (bisa disesuaikan sesuai kebutuhan) */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute w-8 h-12 rounded-full left-4 top-20 bg-amber-700"></div>
+          <div className="absolute w-12 h-16 bg-green-600 rounded-full left-2 top-16"></div>
+          <div className="absolute w-6 h-10 rounded-full right-8 top-24 bg-amber-600"></div>
+          <div className="absolute w-10 bg-green-500 rounded-full right-6 top-20 h-14"></div>
+        </div>
+        {/* Modal box */}
+        <div className="relative z-10 w-full max-w-2xl p-8 mx-4 bg-orange-500 shadow-2xl rounded-3xl flex flex-col items-center">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6 w-full">
+            <div className="px-6 py-2 text-lg font-bold text-white bg-red-500 rounded-full">PETUNJUK</div>
+            <button
+              onClick={startGame}
+              className="flex items-center justify-center w-10 h-10 bg-yellow-400 rounded-full hover:bg-yellow-500"
+              aria-label="Tutup"
+            >
+              <X className="w-6 h-6 text-amber-800" />
+            </button>
+          </div>
+          {/* Content */}
+          <div className="p-6 mb-6 bg-white rounded-2xl w-full flex flex-col items-center">
+            {/* Visual example: SVG apel dengan path putus-putus */}
+            <div className="flex items-center justify-center mb-4">
+              <svg
+                viewBox="0 0 600 600"
+                className="w-32 h-32"
+                style={{ background: 'none' }}
+              >
+                <g transform="scale(1.5) translate(-100, -100)">
+                  {/* Apel garis putus-putus */}
+                  <path
+                    d={applePath}
+                    stroke="#222"
+                    strokeWidth={7}
+                    fill="none"
+                    strokeDasharray="12 10"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                  />
+                  {/* Batang apel */}
+                  <path
+                    d="M300,188 Q298,165 302,145"
+                    stroke="#222"
+                    strokeWidth={6}
+                    fill="none"
+                    strokeDasharray="12 10"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                  />
+                  {/* Daun */}
+                  <path
+                    d="M300,143 Q278,120 255,143 Q270,165 300,143"
+                    stroke="#222"
+                    strokeWidth={6}
+                    fill="none"
+                    strokeDasharray="12 10"
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                  />
+                </g>
+              </svg>
+            </div>
+            <div className="p-4 text-center bg-yellow-100 rounded-xl w-full">
+              <p className="text-lg font-bold text-amber-800">
+                GERAKAN JARI MENGIKUTI GARIS PUTUS-PUTUS
+              </p>
+            </div>
+          </div>
+          {/* Start Button */}
+          <button
+            onClick={startGame}
+            className="w-full max-w-sm mt-2 py-4 rounded-full bg-[#FF7F1F] text-white font-bold text-xl shadow-md hover:bg-[#FF9800] transition"
+            style={{ boxShadow: '0 4px 0 #E65100', fontWeight: 700, fontSize: '1.2rem' }}
+          >
+            MULAI BERMAIN
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render area game utama jika instruksi sudah ditutup
+  if (showResults && !!stars) {
+    // TypeScript: stars, endTime, startTime dijamin number di sini
+    const safeStars = stars ?? 0;
+    const safeEndTime = endTime ?? 0;
+    const safeStartTime = startTime ?? 0;
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-center bg-cover flex items-center justify-center" style={{ backgroundImage: "url(/images/bg-level.png)" }}>
+        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+        <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
+          <div className="w-full max-w-md p-8 mx-4 bg-white border-4 border-orange-500 shadow-2xl rounded-3xl animate-slide-in">
+            {/* Header */}
+            <div className="mb-6 text-center">
+              <div className="px-6 py-3 mb-4 text-xl font-bold text-white bg-teal-500 rounded-full">
+                LEVEL 4 COMPLETE
+              </div>
+            </div>
+            {/* Stars */}
+            <div className="flex justify-center mb-6">
+              {[1, 2, 3].map((star) => (
+                <div
+                  key={star}
+                  className={`w-16 h-16 mx-2 ${star <= safeStars ? "text-yellow-400" : "text-gray-300"}`}
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                  </svg>
+                </div>
+              ))}
+            </div>
+            {/* Message */}
+            <div className="mb-6 text-center">
+              <h2 className="mb-2 text-3xl font-bold text-orange-600">GOOD JOB</h2>
+              <p className="text-lg text-gray-600">
+                Waktu: {endTime && startTime ? Math.round((safeEndTime - safeStartTime) / 1000) : '-'} detik
+              </p>
+              <p className="text-lg text-gray-600">
+                Akurasi: {userPath ? Math.min(100, (estimatePathLength(userPath) / estimatePathLength(combinedPath) * 100)).toFixed(0) : '-'}%
+              </p>
+              <p className="text-lg text-gray-600">
+                Kesalahan: 0
+              </p>
+            </div>
+            {/* Next Button */}
+            <div className="text-center">
+              <button
+                onClick={() => {
+                  onLevelComplete(safeStars, endTime && startTime ? (safeEndTime - safeStartTime) / 1000 : 0, 0);
+                  onNextLevel();
+                  // Reset state agar modal hilang dan siap main lagi
+                  setShowResults(false);
+                  setDrawing(false);
+                  setUserPath("");
+                  setCompleted(false);
+                  setStartTime(null);
+                  setEndTime(null);
+                  setStars(null);
+                }}
+                className="px-8 py-3 mt-2 text-lg font-bold text-white bg-teal-500 rounded-full shadow hover:bg-teal-600 transition"
+              >
+                NEXT
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render area game utama jika belum showResults
   return (
-    <div
-      className="relative min-h-screen overflow-hidden bg-center bg-cover flex items-center justify-center"
-      style={{ backgroundImage: "url(/images/bg-level.png)" }}
-    >
+    <div className="relative min-h-screen overflow-hidden bg-center bg-cover flex items-center justify-center" style={{ backgroundImage: "url(/images/bg-level.png)" }}>
       {/* Header */}
       <div className="absolute top-6 left-0 w-full flex items-center justify-center z-20">
         <div className="relative w-full max-w-4xl flex items-center justify-between px-8">
@@ -184,49 +348,6 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
           </button>
         </div>
       </div>
-      {/* Modal Petunjuk */}
-      {showInstructions && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="relative w-[370px] max-w-[95vw] rounded-2xl bg-white shadow-2xl flex flex-col items-center p-0 border-[10px] border-[#D3541B]">
-            {/* PETUNJUK pill overlapping border */}
-            <div className="absolute left-1/2 -translate-x-1/2 -top-7 z-10">
-              <div className="px-7 py-2 text-lg font-bold text-white bg-[#D32F2F] rounded-full shadow-lg tracking-wide border-4 border-white drop-shadow-lg" style={{ boxShadow: '0 4px 12px #0002' }}>PETUNJUK</div>
-            </div>
-            {/* Close button */}
-            <button
-              onClick={() => setShowInstructions(false)}
-              className="absolute right-3 top-3 w-10 h-10 flex items-center justify-center bg-[#FFD600] border-4 border-white rounded-full shadow-lg hover:bg-yellow-300"
-              aria-label="Tutup"
-              style={{ boxShadow: '0 2px 8px #0002' }}
-            >
-              <X className="w-7 h-7 text-[#D3541B]" />
-            </button>
-            {/* Content */}
-            <div className="flex flex-col items-center w-full px-0 pb-8 pt-8">
-              <div className="w-[90%] bg-white rounded-xl flex flex-col items-center py-4 px-2 mb-4 mt-2">
-                {/* SVG apple, leaf, dashed, hand */}
-                <svg width="120" height="110" viewBox="0 0 120 110" className="mb-2">
-                  {/* Apple dashed */}
-                  <path d="M60,90 C40,85 34,60 39,43 C42,31 53,28 59,39 Q60,36 61,39 C67,28 78,31 81,43 C86,60 80,85 60,90 Z" stroke="#222" strokeWidth="4" fill="none" strokeDasharray="10 8" />
-                  {/* Leaf dashed */}
-                  <path d="M60,28 Q54,22 49,28 Q52,34 60,28" stroke="#388E3C" strokeWidth="4" fill="none" strokeDasharray="7 7" />
-                  {/* Hand (right, cartoon) */}
-                  <g>
-                    <path d="M85,70 Q95,80 85,90 Q75,100 65,90 Q55,80 65,70 Q75,60 85,70 Z" fill="#FFD180" stroke="#C97A00" strokeWidth="2" />
-                    <rect x="75" y="85" width="10" height="15" rx="5" fill="#FFD180" stroke="#C97A00" strokeWidth="2" />
-                  </g>
-                </svg>
-              </div>
-              <div className="w-[90%] flex justify-center mt-2">
-                <div className="bg-[#FFE9B0] rounded-full px-4 py-3 text-center w-full max-w-xs shadow text-[#A05A00] font-bold text-base border-2 border-[#FFE082]">
-                  GERAKAN JARI MENGIKUTI GARIS PUTUS-PUTUS
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* White drawing area */}
       <div className="relative w-[95vw] max-w-4xl h-[70vh] bg-white rounded-[32px] shadow-2xl flex items-center justify-center mt-32">
         <svg
@@ -279,19 +400,6 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
             />
           </g>
         </svg>
-        {showResults && stars && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="animate-slide-in bg-yellow-200 rounded-lg px-6 py-4 shadow text-center font-bold text-lg">
-              {stars === 3 && '⭐⭐⭐'}
-              {stars === 2 && '⭐⭐'}
-              {stars === 1 && '⭐'}
-              <br />
-              🎉 Hebat! Kamu berhasil menggambar apel!
-              <br />
-              <span className="text-base font-normal">Akurasi: {Math.min(100, (estimatePathLength(userPath) / estimatePathLength(combinedPath) * 100)).toFixed(0)}%<br />Waktu: {endTime && startTime ? ((endTime - startTime) / 1000).toFixed(1) : '-'} detik</span>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
