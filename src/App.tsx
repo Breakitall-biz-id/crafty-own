@@ -6,13 +6,15 @@ import GameLevel1 from "./components/GameLevel1";
 import GameLevel2 from "./components/GameLevel2";
 import GameLevel3 from "./components/GameLevel3";
 import GameLevel4 from "./components/GameLevel4";
+import GameLevel5 from "./components/GameLevel5";
+import ResultScreen from "./components/ResultScreen";
 import OrientationGate from "./components/OrientationGate";
 import { useGameState } from "./hooks/useGameState";
 import { Screen } from "./types/GameTypes";
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("splash");
-  // const [currentScreen, setCurrentScreen] = useState<Screen>("level4");
+  // const [currentScreen, setCurrentScreen] = useState<Screen>("level5");
   const { gameState, updateGameState } = useGameState();
   // Removed install prompt local state; keep listener minimal
 
@@ -49,7 +51,10 @@ function App() {
     updateGameState({
       playerName: name,
       gameStarted: true,
+      // Reset completedLevels and results if ingin main baru
+      completedLevels: [],
     });
+    localStorage.removeItem('crafty-own-results');
     navigateTo("level1");
   };
 
@@ -63,7 +68,15 @@ function App() {
     mistakes: number
   ) => {
     const currentLevel =
-      currentScreen === "level1" ? 1 : currentScreen === "level2" ? 2 : currentScreen === "level3" ? 3 : 4;
+      currentScreen === "level1"
+        ? 1
+        : currentScreen === "level2"
+          ? 2
+          : currentScreen === "level3"
+            ? 3
+            : currentScreen === "level4"
+              ? 4
+              : 5;
 
     // Save level completion
     if (!gameState.completedLevels.includes(currentLevel)) {
@@ -81,9 +94,18 @@ function App() {
       mistakes,
       completed: true,
     };
-
-    // Save result
-    console.log("Level completed:", result);
+    // Simpan ke localStorage
+    if (window && window.localStorage) {
+      const results = JSON.parse(localStorage.getItem('crafty-own-results') || '[]');
+      // replace if already exists for this level
+      const idx = results.findIndex((r: any) => r.level === currentLevel);
+      if (idx !== -1) {
+        results[idx] = result;
+      } else {
+        results.push(result);
+      }
+      localStorage.setItem('crafty-own-results', JSON.stringify(results));
+    }
   };
 
   const handleNextLevel = () => {
@@ -94,17 +116,21 @@ function App() {
           ? 2
           : currentScreen === "level3"
             ? 3
-            : 4;
+            : currentScreen === "level4"
+              ? 4
+              : 5;
 
-    // Navigate to next level or menu
+    // Navigate to next level or result screen
     if (currentLevel === 1) {
       navigateTo("level2");
     } else if (currentLevel === 2) {
       navigateTo("level3");
     } else if (currentLevel === 3) {
       navigateTo("level4");
+    } else if (currentLevel === 4) {
+      navigateTo("level5");
     } else {
-      navigateTo("menu");
+      navigateTo("result");
     }
   };
 
@@ -167,6 +193,26 @@ function App() {
             playerName={gameState.playerName}
           />
         );
+      case "level5":
+        return (
+          <GameLevel5
+            onNavigate={navigateTo}
+            onLevelComplete={handleLevelComplete}
+            onNextLevel={handleNextLevel}
+            soundEnabled={gameState.soundEnabled}
+            onSoundToggle={handleSoundToggle}
+            playerName={gameState.playerName}
+          />
+        );
+      case "result":
+        // Hitung total bintang dari localStorage
+        let totalStars = 0;
+        let playerName = gameState.playerName;
+        if (typeof window !== 'undefined') {
+          const results = JSON.parse(localStorage.getItem('crafty-own-results') || '[]');
+          totalStars = results.reduce((sum: number, r: any) => sum + (r.stars || 0), 0);
+        }
+        return <ResultScreen playerName={playerName} totalStars={totalStars} onNavigate={navigateTo} />;
       default:
         return <SplashScreen onStart={() => navigateTo("menu")} />;
     }
