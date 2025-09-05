@@ -14,7 +14,7 @@ import { Screen } from "./types/GameTypes";
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>("splash");
-  // const [currentScreen, setCurrentScreen] = useState<Screen>("result");
+  // const [currentScreen, setCurrentScreen] = useState<Screen>("level4");
   const { gameState, updateGameState } = useGameState();
   // Removed install prompt local state; keep listener minimal
 

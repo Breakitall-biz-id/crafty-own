@@ -73,7 +73,7 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     setDrawing(true);
     if (!startTime) setStartTime(Date.now());
     const { x, y } = getSvgCoords(e);
-    setUserPath(`M${x},${y}`);
+    setUserPath((prev) => prev ? `${prev} M${x},${y}` : `M${x},${y}`);
   };
 
   // Menggambar mengikuti pointer
@@ -83,13 +83,17 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     setUserPath((prev) => prev + ` L${x},${y}`);
   };
 
-  // Selesai menggambar
+  // Selesai menggambar (hanya stop drawing, penilaian dilakukan manual)
   const handlePointerUp = () => {
     if (!drawing) return;
     setDrawing(false);
-    const finishTime = Date.now();
-    setEndTime(finishTime);
-    // Penilaian otomatis
+    setEndTime(Date.now());
+  };
+
+  // Tombol selesai: lakukan penilaian
+  const handleFinishDrawing = () => {
+    if (completed || !userPath) return;
+    const finishTime = endTime ?? Date.now();
     const timeElapsed = startTime ? (finishTime - startTime) / 1000 : 0;
     const userLength = estimatePathLength(userPath);
     const combinedLength = estimatePathLength(combinedPath);
@@ -323,85 +327,96 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   // Render area game utama jika belum showResults
   return (
     <div className="relative min-h-screen overflow-hidden bg-center bg-cover flex items-center justify-center" style={{ backgroundImage: "url(/images/bg-level.png)" }}>
-      {/* Header */}
-      <div className="absolute top-6 left-0 w-full flex items-center justify-center z-20">
-        <div className="relative w-full max-w-4xl flex items-center justify-between px-8">
-          <button
-            onClick={() => onNavigate("menu")}
-            className="w-12 h-12 bg-yellow-200 border-4 border-white rounded-full shadow flex items-center justify-center hover:bg-yellow-300"
-            style={{ marginRight: 12 }}
-          >
-            <Home className="w-7 h-7 text-orange-700" />
-          </button>
-          <div className="flex-1 flex items-center justify-center">
-            <div className="px-8 py-2 bg-yellow-100 rounded-full shadow text-2xl font-bold text-orange-700 tracking-wide border-2 border-yellow-200">
-              GAMBAR BUAH APEL!
-            </div>
-          </div>
-          <button
-            onClick={() => setShowInstructions(true)}
-            className="w-12 h-12 bg-yellow-200 border-4 border-white rounded-full shadow flex items-center justify-center hover:bg-yellow-300"
-            style={{ marginLeft: 12 }}
-            aria-label="Petunjuk"
-          >
-            <Lightbulb className="w-7 h-7 text-orange-700" />
-          </button>
-        </div>
-      </div>
       {/* White drawing area */}
-      <div className="relative w-[95vw] max-w-4xl h-[70vh] bg-white rounded-[32px] shadow-2xl flex items-center justify-center mt-32">
-        <svg
-          ref={svgRef}
-          viewBox="0 0 600 600"
-          className="w-full h-full touch-none"
-          style={{ touchAction: "none", aspectRatio: "1/1" }}
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerLeave={handlePointerUp}
+      <div className="relative w-[95vw] max-w-4xl h-[85vh] bg-white rounded-[32px] shadow-2xl flex flex-col items-center justify-center mt-0">
+        <div className="absolute top-6 left-0 w-full flex items-center justify-center z-20">
+          <div className="relative w-full max-w-4xl flex items-center justify-between px-8">
+            <button
+              onClick={() => onNavigate("menu")}
+              className="p-0 m-0 flex items-center justify-center"
+              style={{ marginRight: 12, background: 'none', border: 'none', boxShadow: 'none' }}
+            >
+              <img src="/images/home-icon.png" alt="Home" className="w-20 h-20" />
+            </button>
+            <div className="flex-1 flex items-center justify-center">
+              <div
+                className="px-8 py-2 rounded-full shadow text-2xl font-bold tracking-wide border-2 border-yellow-200"
+                style={{ background: '#fbf6a6', color: '#e37631' }}
+              >
+                GAMBAR BUAH APEL!
+              </div>
+            </div>
+            <button
+              onClick={() => setShowInstructions(true)}
+              className="p-0 m-0 flex items-center justify-center"
+              style={{ marginLeft: 12, background: 'none', border: 'none', boxShadow: 'none' }}
+              aria-label="Petunjuk"
+            >
+              <img src="/images/instruction-icon.png" alt="Instruction" className="w-20 h-20" />
+            </button>
+          </div>
+        </div>
+        <div className="flex w-full h-full items-center justify-center">
+          <svg
+            ref={svgRef}
+            viewBox="0 0 600 600"
+            className="w-full h-full touch-none mb-4"
+            style={{ touchAction: "none", aspectRatio: "1/1", marginTop: '144px', maxWidth: '100%', maxHeight: '100%' }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
+          >
+            <g transform="scale(1.5) translate(-100, -100)">
+              <path
+                d={applePath}
+                stroke="#222"
+                strokeWidth={6}
+                fill="none"
+                strokeDasharray="12 10"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Batang apel */}
+              <path
+                d="M300,188 Q298,165 302,145"
+                stroke="#222"
+                strokeWidth={6}
+                fill="none"
+                strokeDasharray="12 10"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+              {/* Daun */}
+              <path
+                d="M300,143 Q278,120 255,143 Q270,165 300,143"
+                stroke="#222"
+                strokeWidth={6}
+                fill="none"
+                strokeDasharray="12 10"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+              <path
+                d={userPath}
+                stroke="#e53e3e"
+                strokeWidth={7}
+                fill="none"
+                strokeLinejoin="round"
+                strokeLinecap="round"
+              />
+            </g>
+          </svg>
+        </div>
+        {/* Tombol selesai, aktif jika user sudah menggambar minimal 30% dari path apel */}
+        <button
+          onClick={handleFinishDrawing}
+          className="absolute bottom-6 px-8 py-4 rounded-full text-xl font-bold shadow bg-orange-500 text-white hover:bg-orange-600 transition"
         >
-          <g transform="scale(1.5) translate(-100, -100)">
-            <path
-              d={applePath}
-              stroke="#222"
-              strokeWidth={6}
-              fill="none"
-              strokeDasharray="12 10"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            {/* Batang apel */}
-            <path
-              d="M300,188 Q298,165 302,145"
-              stroke="#222"
-              strokeWidth={6}
-              fill="none"
-              strokeDasharray="12 10"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-            {/* Daun */}
-            <path
-              d="M300,143 Q278,120 255,143 Q270,165 300,143"
-              stroke="#222"
-              strokeWidth={6}
-              fill="none"
-              strokeDasharray="12 10"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-            <path
-              d={userPath}
-              stroke="#e53e3e"
-              strokeWidth={7}
-              fill="none"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-          </g>
-        </svg>
+          SELESAI
+        </button>
       </div>
-    </div>
+    </div >
   );
 };
 
