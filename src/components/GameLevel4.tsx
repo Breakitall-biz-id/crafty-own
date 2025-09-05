@@ -2,7 +2,6 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useSound } from "../hooks/useSound";
 import { Screen } from "../types/GameTypes";
-import { Home, Lightbulb, X } from "lucide-react";
 
 
 interface GameLevel4Props {
@@ -15,18 +14,12 @@ interface GameLevel4Props {
 }
 
 
-const applePath = `
-  M300,390
-  C210,375 180,300 195,225
-  C202,165 255,150 285,188
-  Q300,173 315,188
-  C345,150 397,165 405,225
-  C420,300 390,375 300,390
-  Z
-`;
-const stemPath = `M300,188 Q298,165 302,145`;
-const leafPath = `M300,143 Q278,120 255,143 Q270,165 300,143`;
-const combinedPath = `${applePath} ${stemPath} ${leafPath}`;
+const applePath = [
+  "M106.454 82.3906 C102.454 67.3906 70.9537 40.3903 27.9538 76.3905 C-15.0462 112.391 2.95378 176.891 16.9538 192.891 C30.9537 208.891 45.9538 221.176 62.4537 225.891 C83.4537 231.891 90.4538 230.391 106.954 222.391",
+  "M106.954 222.391 C118.454 231.391 150.454 231.885 169.954 216.891 C189.454 201.896 197.25 197.02 205.954 177.891 C212.324 163.891 224.954 112.891 185.954 75.8906 C146.954 38.8905 112.454 74.8906 112.454 74.8906 C112.454 74.8906 108.954 61.3906 112.954 45.8906 C116.954 30.3906 127.454 22.8906 127.454 22.8906 C127.454 22.8906 126.954 13.3908 120.454 18.8906 C113.954 24.3904 109.954 27.3906 104.954 44.3906 C100.761 58.6472 106.954 82.3906 106.954 82.3906",
+  "M102.954 40.3909 C102.954 40.3909 103.454 20.988 82.9537 7.89087 C62.4537 -5.20624 39.9537 4.39062 39.9537 4.39062 C39.9537 4.39062 42.4537 12.3908 47.9537 20.3907 C53.4537 28.3906 54.6469 29.1405 60.9537 33.3907 C83.9537 48.8906 103.954 46.8909 103.954 46.8909"
+].join(" ");
+const combinedPath = applePath;
 
 
 const GameLevel4: React.FC<GameLevel4Props> = ({
@@ -37,7 +30,7 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   onSoundToggle,
   playerName,
 }) => {
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [drawing, setDrawing] = useState(false);
   const [userPath, setUserPath] = useState<string>("");
   const [completed, setCompleted] = useState(false);
@@ -156,104 +149,28 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   function getSvgCoords(e: React.PointerEvent) {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
+
+    // Gunakan SVGPoint untuk konversi yang akurat
     const pt = svg.createSVGPoint();
     pt.x = e.clientX;
     pt.y = e.clientY;
-    const cursorpt = pt.matrixTransform(svg.getScreenCTM()?.inverse());
-    const x = cursorpt.x / 1.5 + 100;
-    const y = cursorpt.y / 1.5 + 100;
+
+    // Transform ke koordinat SVG
+    const screenCTM = svg.getScreenCTM();
+    if (!screenCTM) return { x: 0, y: 0 };
+
+    const cursorpt = pt.matrixTransform(screenCTM.inverse());
+
+    // Karena grup memiliki transform="scale(1.5) translate(100, 40)"
+    // Order: scale dulu (1.5), lalu translate (100, 40)
+    // Untuk balik: translate dulu, lalu scale
+    const x = (cursorpt.x / 1.5) - 100;
+    const y = (cursorpt.y / 1.5) - 40;
+
     return { x, y };
   }
 
-  if (showInstructions) {
-    return (
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center min-h-screen overflow-hidden bg-center bg-cover"
-        style={{ backgroundImage: "url(/images/bg-level.png)" }}
-      >
-        {/* Overlay hitam transparan */}
-        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-        {/* Pohon dekorasi kiri-kanan (bisa disesuaikan sesuai kebutuhan) */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute w-8 h-12 rounded-full left-4 top-20 bg-amber-700"></div>
-          <div className="absolute w-12 h-16 bg-green-600 rounded-full left-2 top-16"></div>
-          <div className="absolute w-6 h-10 rounded-full right-8 top-24 bg-amber-600"></div>
-          <div className="absolute w-10 bg-green-500 rounded-full right-6 top-20 h-14"></div>
-        </div>
-        {/* Modal box */}
-        <div className="relative z-10 w-full max-w-2xl p-8 mx-4 bg-orange-500 shadow-2xl rounded-3xl flex flex-col items-center">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6 w-full">
-            <div className="px-6 py-2 text-lg font-bold text-white bg-red-500 rounded-full">PETUNJUK</div>
-            <button
-              onClick={startGame}
-              className="flex items-center justify-center w-10 h-10 bg-yellow-400 rounded-full hover:bg-yellow-500"
-              aria-label="Tutup"
-            >
-              <X className="w-6 h-6 text-amber-800" />
-            </button>
-          </div>
-          {/* Content */}
-          <div className="p-6 mb-6 bg-white rounded-2xl w-full flex flex-col items-center">
-            {/* Visual example: SVG apel dengan path putus-putus */}
-            <div className="flex items-center justify-center mb-4">
-              <svg
-                viewBox="0 0 600 600"
-                className="w-32 h-32"
-                style={{ background: 'none' }}
-              >
-                <g transform="scale(1.5) translate(-100, -100)">
-                  {/* Apel garis putus-putus */}
-                  <path
-                    d={applePath}
-                    stroke="#222"
-                    strokeWidth={7}
-                    fill="none"
-                    strokeDasharray="12 10"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
-                  {/* Batang apel */}
-                  <path
-                    d="M300,188 Q298,165 302,145"
-                    stroke="#222"
-                    strokeWidth={6}
-                    fill="none"
-                    strokeDasharray="12 10"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
-                  {/* Daun */}
-                  <path
-                    d="M300,143 Q278,120 255,143 Q270,165 300,143"
-                    stroke="#222"
-                    strokeWidth={6}
-                    fill="none"
-                    strokeDasharray="12 10"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
-                </g>
-              </svg>
-            </div>
-            <div className="p-4 text-center bg-yellow-100 rounded-xl w-full">
-              <p className="text-lg font-bold text-amber-800">
-                GERAKAN JARI MENGIKUTI GARIS PUTUS-PUTUS
-              </p>
-            </div>
-          </div>
-          {/* Start Button */}
-          <button
-            onClick={startGame}
-            className="w-full max-w-sm mt-2 py-4 rounded-full bg-[#FF7F1F] text-white font-bold text-xl shadow-md hover:bg-[#FF9800] transition"
-            style={{ boxShadow: '0 4px 0 #E65100', fontWeight: 700, fontSize: '1.2rem' }}
-          >
-            MULAI BERMAIN
-          </button>
-        </div>
-      </div>
-    );
-  }
+
 
   // Render area game utama jika instruksi sudah ditutup
   if (showResults && !!stars) {
@@ -367,7 +284,7 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
             onPointerUp={handlePointerUp}
             onPointerLeave={handlePointerUp}
           >
-            <g transform="scale(1.5) translate(-100, -100)">
+            <g transform="scale(1.5) translate(100, 40)">
               <path
                 d={applePath}
                 stroke="#222"
@@ -377,29 +294,9 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
                 strokeLinecap="round"
                 strokeLinejoin="round"
               />
-              {/* Batang apel */}
-              <path
-                d="M300,188 Q298,165 302,145"
-                stroke="#222"
-                strokeWidth={6}
-                fill="none"
-                strokeDasharray="12 10"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-              {/* Daun */}
-              <path
-                d="M300,143 Q278,120 255,143 Q270,165 300,143"
-                stroke="#222"
-                strokeWidth={6}
-                fill="none"
-                strokeDasharray="12 10"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
               <path
                 d={userPath}
-                stroke="#e53e3e"
+                stroke="#222"
                 strokeWidth={7}
                 fill="none"
                 strokeLinejoin="round"
@@ -416,6 +313,53 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
           SELESAI
         </button>
       </div>
+
+      {/* Modal petunjuk overlay */}
+      {showInstructions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="rounded-3xl p-3 shadow-2xl max-w-lg w-full mx-4 relative" style={{ backgroundColor: '#c53c03' }}>
+            {/* X icon di sudut kanan atas */}
+            <img
+              src="/images/x-icon.png"
+              alt="Close"
+              className="absolute top-4 right-4 w-20 h-20 cursor-pointer hover:scale-110 transition-transform z-10"
+              onClick={() => setShowInstructions(false)}
+            />
+            <div className="text-white text-center py-3 rounded-t-3xl" style={{ backgroundColor: '#ce0e0a' }}>
+              <h2 className="text-2xl font-bold">PETUNJUK</h2>
+            </div>
+            <div className="bg-white p-6 rounded-b-3xl">
+              <div className="text-center">
+                <div className="mb-4">
+                  <svg
+                    viewBox="0 0 600 600"
+                    className="w-48 h-48 mx-auto"
+                    style={{ background: 'none' }}
+                  >
+                    <g transform="scale(2) translate(50, 30)">
+                      {/* Apel garis putus-putus */}
+                      <path
+                        d={applePath}
+                        stroke="#222"
+                        strokeWidth={7}
+                        fill="none"
+                        strokeDasharray="12 10"
+                        strokeLinejoin="round"
+                        strokeLinecap="round"
+                      />
+                    </g>
+                  </svg>
+                </div>
+                <div className="p-4 text-center rounded-xl" style={{ backgroundColor: '#ffe7b4' }}>
+                  <p className="text-lg font-bold" style={{ color: '#9f4a1d' }}>
+                    GERAKAN JARI MENGIKUTI GARIS PUTUS-PUTUS
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div >
   );
 };
