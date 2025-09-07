@@ -43,6 +43,8 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   const [endTime, setEndTime] = useState<number | null>(null);
   const [stars, setStars] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [accuracy, setAccuracy] = useState<number>(0);
+  const [mistakes, setMistakes] = useState<number>(0);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const { play, stop, unlock } = useSound(soundEnabled);
@@ -79,6 +81,46 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     return length;
   }
 
+  // Fungsi untuk mendeteksi apakah titik berada dekat dengan path target
+  function isPointNearPath(x: number, y: number): boolean {
+    // Simplified: check if point is within apple area bounds
+    return x >= 20 && x <= 194 && y >= 0 && y <= 231;
+  }
+
+  // Fungsi untuk menghitung kesalahan berdasarkan drawing user
+  function calculateMistakes(userPath: string): number {
+    if (!userPath) return 0;
+
+    const commands = userPath.match(/[ML][^ML]*/g);
+    if (!commands) return 0;
+
+    let mistakeCount = 0;
+    let totalPoints = 0;
+
+    for (const cmd of commands) {
+      const type = cmd[0];
+      const nums = cmd
+        .slice(1)
+        .trim()
+        .split(/[ ,]+/)
+        .map(Number)
+        .filter((n) => !isNaN(n));
+
+      if (type === "M" || type === "L") {
+        const [x, y] = nums;
+        totalPoints++;
+
+        // Check if point is too far from target path
+        if (!isPointNearPath(x, y)) {
+          mistakeCount++;
+        }
+      }
+    }
+
+    // Return percentage of mistakes (out of 100)
+    return totalPoints > 0 ? Math.round((mistakeCount / totalPoints) * 100) : 0;
+  }
+
   function getSvgCoords(e: React.PointerEvent) {
     const svg = svgRef.current;
     if (!svg) return { x: 0, y: 0 };
@@ -97,7 +139,9 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     if (soundEnabled) {
       try {
         await unlock();
-      } catch {}
+      } catch {
+        // Ignore unlock errors
+      }
       play("start");
       play("bgm");
     }
@@ -109,6 +153,8 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     setEndTime(null);
     setStars(null);
     setShowResults(false);
+    setAccuracy(0);
+    setMistakes(0);
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -137,13 +183,21 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     const timeElapsed = startTime ? (finishTime - startTime) / 1000 : 0;
     const userLength = estimatePathLength(userPath);
     const combinedLength = estimatePathLength(combinedPath);
-    const accuracy =
+    const calculatedAccuracy =
       combinedLength > 0 ? Math.min(1, userLength / combinedLength) : 0;
 
+    // Hitung kesalahan dan akurasi
+    const calculatedMistakes = calculateMistakes(userPath);
+    const accuracyPercentage = Math.round(calculatedAccuracy * 100);
+
+    // Set state untuk ditampilkan di result
+    setAccuracy(accuracyPercentage);
+    setMistakes(calculatedMistakes);
+
     let bintang = 1;
-    if (accuracy >= 0.9 && timeElapsed >= 15 && timeElapsed <= 20) {
+    if (calculatedAccuracy >= 0.9 && timeElapsed >= 15 && timeElapsed <= 20) {
       bintang = 3;
-    } else if (accuracy >= 0.7 && timeElapsed <= 30) {
+    } else if (calculatedAccuracy >= 0.7 && timeElapsed <= 30) {
       bintang = 2;
     }
 
@@ -164,13 +218,6 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     const safeStars = stars ?? 0;
     const safeEndTime = endTime ?? 0;
     const safeStartTime = startTime ?? 0;
-    const accuracy = userPath
-      ? Math.min(
-          100,
-          (estimatePathLength(userPath) / estimatePathLength(combinedPath)) *
-            100
-        ).toFixed(0)
-      : "-";
     const timeElapsed = endTime && startTime ? safeEndTime - safeStartTime : 0;
 
     return (
@@ -179,9 +226,10 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
         level={4}
         stars={safeStars}
         timeElapsed={timeElapsed}
-        mistakes={0}
+        mistakes={mistakes}
+        accuracy={accuracy}
         onNextLevel={() => {
-          onLevelComplete(safeStars, timeElapsed / 1000, 0);
+          onLevelComplete(safeStars, timeElapsed / 1000, mistakes);
           onNextLevel();
           setShowResults(false);
           setDrawing(false);
@@ -190,6 +238,8 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
           setStartTime(null);
           setEndTime(null);
           setStars(null);
+          setAccuracy(0);
+          setMistakes(0);
         }}
       />
     );

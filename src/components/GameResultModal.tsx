@@ -8,6 +8,7 @@ interface GameResultModalProps {
   mistakes: number;
   onNextLevel: () => void;
   backgroundImage?: string;
+  accuracy?: number;
 }
 
 const GameResultModal: React.FC<GameResultModalProps> = ({
@@ -18,6 +19,7 @@ const GameResultModal: React.FC<GameResultModalProps> = ({
   mistakes,
   onNextLevel,
   backgroundImage = "/images/bg-level.png",
+  accuracy,
 }) => {
   if (!isOpen) return null;
 
@@ -62,7 +64,10 @@ const GameResultModal: React.FC<GameResultModalProps> = ({
             <p className="text-lg text-gray-600">
               Waktu: {Math.round(timeElapsed / 1000)} detik
             </p>
-            <p className="text-lg text-gray-600">Kesalahan: {mistakes}</p>
+            {accuracy !== undefined && (
+              <p className="text-lg text-gray-600">Akurasi: {accuracy}%</p>
+            )}
+            <p className="text-lg text-gray-600">Kesalahan: {mistakes}%</p>
           </div>
 
           <div className="text-center">

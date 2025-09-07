@@ -255,9 +255,8 @@ export default function GameLevel5({ onNavigate, soundEnabled }: GameLevel5Props
         title="Level 5: Mewarnai Apel"
         onNavigate={onNavigate}
         onShowInstructions={() => setShowInstructions(true)}
-        backgroundImage="url('/images/IMG_20250724_015554.png')"
       >
-        <div className="w-full h-full flex flex-col items-center justify-center relative p-2 md:p-4 overflow-hidden">
+        <div className="relative flex flex-col items-center justify-center w-full h-full p-2 overflow-hidden md:p-4">
           {/* Apple SVG - bentuk geometris sesuai gambar */}
           <div className="flex-1 flex items-center justify-center mb-2 md:mb-4 max-h-[60vh] md:max-h-none">
             <svg 
@@ -282,7 +281,7 @@ export default function GameLevel5({ onNavigate, soundEnabled }: GameLevel5Props
                   stroke="#666"
                   strokeWidth={2}
                   strokeDasharray="4 4"
-                  className="hover:stroke-orange-500 transition-colors"
+                  className="transition-colors hover:stroke-orange-500"
                 />
               ))}
               
@@ -314,7 +313,7 @@ export default function GameLevel5({ onNavigate, soundEnabled }: GameLevel5Props
           </div>
 
           {/* Tool palette - posisi di bawah gambar untuk mobile landscape */}
-          <div className="bg-yellow-200 rounded-2xl p-3 shadow-lg max-w-md w-full">
+          <div className="w-full max-w-md p-3 bg-yellow-200 shadow-lg rounded-2xl">
             <div className="flex items-center justify-center gap-3 md:gap-4">
               {/* Color palette - 3 warna untuk mode fill area */}
               {colors.map((color, index) => (
