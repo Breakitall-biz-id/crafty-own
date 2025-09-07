@@ -1,583 +1,393 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useSound } from "../hooks/useSound";
-import { Screen } from "../types/GameTypes";
-import { Home, Lightbulb, Volume2, VolumeX, X } from "lucide-react";
-import { motion } from "framer-motion";
+import type { Screen } from "../types/GameTypes";
+import InstructionModal from "./InstructionModal";
+import BaseGameLayout from "./BaseGameLayout";
+import GameResultModal from "./GameResultModal";
 
 interface GameLevel5Props {
-    onNavigate: (screen: Screen) => void;
-    onLevelComplete: (stars: number, timeElapsed: number, mistakes: number) => void;
-    onNextLevel: () => void;
-    soundEnabled: boolean;
-    onSoundToggle: () => void;
-    playerName: string;
+  onNavigate: (screen: Screen) => void;
+  onSoundToggle: () => void;
+  soundEnabled: boolean;
+  setScreen: (screen: Screen) => void;
+  playerName: string;
 }
 
-const GameLevel5: React.FC<GameLevel5Props> = ({
-    onNavigate,
-    onLevelComplete,
-    onNextLevel,
-    soundEnabled,
-    onSoundToggle,
-    playerName,
-}) => {
-    // Palet warna dan tools
-    const colors = ["#e53935", "#43a047", "#8d6e63"];
-    const [selectedColor, setSelectedColor] = useState(colors[0]);
-    const [tool, setTool] = useState<"color" | "pencil" | "eraser">("color");
-    const [fills, setFills] = useState<{ [key: number]: string }>({});
-    const [strokes, setStrokes] = useState<{ [key: number]: string }>({});
-    const [pencilPaths, setPencilPaths] = useState<{ [key: number]: string }>({});
-    const [freePencilPath, setFreePencilPath] = useState<string>("");
-    const [drawing, setDrawing] = useState(false);
-    const [currentAreaId, setCurrentAreaId] = useState<number | null>(null);
-    const svgRef = useRef<SVGSVGElement>(null);
-    const [showHint, setShowHint] = useState(false);
-    const [showInstructions, setShowInstructions] = useState(true);
-    const [showResults, setShowResults] = useState(false);
-    const [gameStarted, setGameStarted] = useState(false);
-    const [gameCompleted, setGameCompleted] = useState(false);
-    const [startTime, setStartTime] = useState<number>(0);
-    const [timeElapsed, setTimeElapsed] = useState(0);
-    const [mistakes, setMistakes] = useState(0);
-    const [stars, setStars] = useState(3);
-    const [overallAccuracy] = useState(100);
-    const { play, stop, unlock } = useSound(soundEnabled);
+export default function GameLevel5({ onNavigate, soundEnabled }: GameLevel5Props) {
+  const [gameStarted, setGameStarted] = useState(false);
+  const [gameCompleted, setGameCompleted] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [stars] = useState(3);
+  
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [activeTool, setActiveTool] = useState<"fill" | "draw" | "eraser">("fill");
+  const [activeColor, setActiveColor] = useState("#dc2626");
+  const [drawingPaths, setDrawingPaths] = useState<string[]>([]);
+  const [currentPath, setCurrentPath] = useState("");
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [lastPoint, setLastPoint] = useState<{x: number, y: number} | null>(null);
 
-    const handleFill = (id: number) => {
-        if (tool === "color") {
-            // Mode color: mewarnai dengan warna yang dipilih
-            setFills({ ...fills, [id]: selectedColor });
-            if (soundEnabled) play("match");
-        } else if (tool === "eraser") {
-            // Mode eraser: hapus warna, stroke, dan pencil paths
-            const newFills = { ...fills };
-            const newStrokes = { ...strokes };
-            const newPencilPaths = { ...pencilPaths };
-            delete newFills[id];
-            delete newStrokes[id];
-            delete newPencilPaths[id];
-            setFills(newFills);
-            setStrokes(newStrokes);
-            setPencilPaths(newPencilPaths);
-            if (soundEnabled) play("match");
-        }
-    };
+  // Color palette - hanya 3 warna sesuai gambar
+  const colors = ["#dc2626", "#16a34a", "#92400e"]; // Merah, Hijau, Coklat
 
-    // Fungsi untuk clear semua gambar pensil bebas
-    const clearFreePencil = () => {
-        setFreePencilPath("");
-        if (soundEnabled) play("match");
-    };
+  // Apple areas for coloring - bentuk geometris seperti di gambar
+  const [appleAreas, setAppleAreas] = useState([
+    { id: "apple-body-left", path: "M 150 150 L 250 150 L 250 400 C 250 420 230 440 210 440 C 190 440 150 420 150 400 Z", fill: "transparent" },
+    { id: "apple-body-right", path: "M 250 150 L 350 150 C 370 150 390 170 390 190 L 390 380 C 390 420 350 440 310 440 C 290 440 250 420 250 400 Z", fill: "transparent" },
+    { id: "apple-stem-left", path: "M 180 110 C 180 100 190 90 200 90 C 210 90 220 100 220 110 L 220 150 L 180 150 Z", fill: "transparent" },
+    { id: "apple-stem-right", path: "M 280 110 C 280 100 290 90 300 90 C 310 90 320 100 320 110 L 320 150 L 280 150 Z", fill: "transparent" },
+    { id: "apple-leaf-left", path: "M 160 120 C 150 110 140 105 130 110 C 125 115 130 125 140 130 L 170 140 Z", fill: "transparent" },
+    { id: "apple-leaf-right", path: "M 340 120 C 350 110 360 105 370 110 C 375 115 370 125 360 130 L 330 140 Z", fill: "transparent" },
+    { id: "apple-center", path: "M 220 180 C 240 160 260 160 280 180 L 280 350 C 280 370 250 390 250 390 C 250 390 220 370 220 350 Z", fill: "transparent" }
+  ]);
 
-    // Fungsi untuk mendeteksi apakah titik berada dalam area polygon
-    const isPointInPolygon = (x: number, y: number, points: string): boolean => {
-        const coords = points.split(/[ ,]+/).map(Number);
-        const vertices: [number, number][] = [];
-        for (let i = 0; i < coords.length; i += 2) {
-            vertices.push([coords[i], coords[i + 1]]);
-        }
+  const sound = useSound(soundEnabled);
 
-        let inside = false;
-        for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
-            const [xi, yi] = vertices[i];
-            const [xj, yj] = vertices[j];
-            if (((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi)) {
-                inside = !inside;
-            }
-        }
-        return inside;
-    };
-
-    // Fungsi untuk mendapatkan area ID berdasarkan koordinat
-    const getAreaIdFromCoords = (x: number, y: number): number | null => {
-        const areas = [
-            { id: 1, points: "200,40 260,70 320,120 300,200 200,220 100,200 80,120 140,70" },
-            { id: 2, points: "140,70 200,120 260,70" },
-            { id: 3, points: "200,120 200,220 300,200 320,120" },
-            { id: 4, points: "200,120 200,220 100,200 80,120" },
-            { id: 5, points: "120,30 140,70 200,40 180,20" },
-            { id: 6, points: "280,30 260,70 200,40 220,20" }
-        ];
-
-        for (const area of areas) {
-            if (isPointInPolygon(x, y, area.points)) {
-                return area.id;
-            }
-        }
-        return null;
-    };
-
-    // Konversi koordinat pointer ke koordinat SVG
-    const getSvgCoords = (e: React.PointerEvent) => {
-        const svg = svgRef.current;
-        if (!svg) return { x: 0, y: 0 };
-        const rect = svg.getBoundingClientRect();
-        const scaleX = 400 / rect.width;
-        const scaleY = 260 / rect.height;
-        const x = (e.clientX - rect.left) * scaleX;
-        const y = (e.clientY - rect.top) * scaleY;
-        return { x, y };
-    };
-
-    // Handler untuk mulai menggambar dengan pensil
-    const handlePointerDown = (e: React.PointerEvent) => {
-        if (tool !== "pencil") return;
-        setDrawing(true);
-        const { x, y } = getSvgCoords(e);
-        setFreePencilPath(`M${x},${y}`);
-    };
-
-    // Handler untuk menggambar mengikuti pointer
-    const handlePointerMove = (e: React.PointerEvent) => {
-        if (!drawing || tool !== "pencil") return;
-        const { x, y } = getSvgCoords(e);
-        setFreePencilPath(prev => prev + ` L${x},${y}`);
-    };
-
-    // Handler untuk selesai menggambar
-    const handlePointerUp = () => {
-        if (drawing && soundEnabled) play("match");
-        setDrawing(false);
-    };
-
-    // Effect untuk menangani pointer events di seluruh dokumen
-    useEffect(() => {
-        const handleGlobalPointerMove = (e: PointerEvent) => {
-            if (!drawing || tool !== "pencil" || !svgRef.current) return;
-            
-            const svg = svgRef.current;
-            const rect = svg.getBoundingClientRect();
-            const scaleX = 400 / rect.width;
-            const scaleY = 260 / rect.height;
-            const x = (e.clientX - rect.left) * scaleX;
-            const y = (e.clientY - rect.top) * scaleY;
-            
-            setFreePencilPath(prev => prev + ` L${x},${y}`);
-        };
-
-        const handleGlobalPointerUp = () => {
-            if (drawing) {
-                if (soundEnabled) play("match");
-                setDrawing(false);
-            }
-        };
-
-        if (drawing) {
-            document.addEventListener('pointermove', handleGlobalPointerMove);
-            document.addEventListener('pointerup', handleGlobalPointerUp);
-        }
-
-        return () => {
-            document.removeEventListener('pointermove', handleGlobalPointerMove);
-            document.removeEventListener('pointerup', handleGlobalPointerUp);
-        };
-    }, [drawing, tool, soundEnabled, play]);
-
-    const startGame = async () => {
-        if (soundEnabled) {
-            try { await unlock(); } catch { }
-            play("start");
-            play("bgm");
-        }
-        setShowInstructions(false);
-        setGameStarted(true);
-        setStartTime(Date.now());
-        setFills({});
-        setStrokes({});
-        setPencilPaths({});
-        setFreePencilPath("");
-        setMistakes(0);
-        setStars(3);
-        setGameCompleted(false);
-        setShowResults(false);
-        setTool("color"); // Reset ke mode color
-    };
-
-    const handleNextLevel = () => {
-        if (soundEnabled) stop("bgm");
-        setShowResults(false);
-        setGameCompleted(false);
-        onLevelComplete(stars, timeElapsed, mistakes);
-        onNextLevel();
-    };
-
-    const finishGame = () => {
-        if (soundEnabled) {
-            play("complete");
-            stop("bgm");
-        }
-        setTimeElapsed(Date.now() - startTime);
-        setGameCompleted(true);
-        setTimeout(() => setShowResults(true), 800);
-    };
-
-    // --- Modal Petunjuk ---
-    if (showInstructions) {
-        return (
-            <div className="relative min-h-screen overflow-hidden bg-center bg-cover" style={{ backgroundImage: "url(/images/bg-level.png)" }}>
-                <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-                <div className="absolute z-20 flex items-center justify-between top-4 left-4 right-4">
-                    <button onClick={() => onNavigate("menu")}
-                        className="flex items-center justify-center w-12 h-12 bg-yellow-400 rounded-full shadow-lg hover:bg-yellow-500">
-                        <Home className="w-6 h-6 text-amber-800" />
-                    </button>
-                    <button onClick={onSoundToggle}
-                        className="flex items-center justify-center w-12 h-12 bg-yellow-400 rounded-full shadow-lg hover:bg-yellow-500">
-                        {soundEnabled ? <Volume2 className="w-6 h-6 text-amber-800" /> : <VolumeX className="w-6 h-6 text-amber-800" />}
-                    </button>
-                </div>
-                <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-                    <div className="w-full max-w-2xl p-8 mx-4 bg-orange-500 shadow-2xl rounded-3xl">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="px-6 py-2 text-lg font-bold text-white bg-red-500 rounded-full">PETUNJUK</div>
-                            <button onClick={startGame} className="flex items-center justify-center w-10 h-10 bg-yellow-400 rounded-full hover:bg-yellow-500">
-                                <X className="w-6 h-6 text-amber-800" />
-                            </button>
-                        </div>
-                        <div className="p-6 mb-6 bg-white rounded-2xl">
-                            {/* Preview persis SVG utama, tanpa interaksi dan fill transparan */}
-                            <div className="flex items-center justify-center mb-4">
-                                <svg viewBox="0 0 400 260" className="w-[380px] h-[240px]">
-                                    <polygon points="200,40 260,70 320,120 300,200 200,220 100,200 80,120 140,70"
-                                        fill="transparent" stroke="#888" strokeWidth={2} strokeDasharray="6 6" />
-                                    <polygon points="140,70 200,120 260,70"
-                                        fill="transparent" stroke="#888" strokeWidth={2} strokeDasharray="6 6" />
-                                    <polygon points="200,120 200,220 300,200 320,120"
-                                        fill="transparent" stroke="#888" strokeWidth={2} strokeDasharray="6 6" />
-                                    <polygon points="200,120 200,220 100,200 80,120"
-                                        fill="transparent" stroke="#888" strokeWidth={2} strokeDasharray="6 6" />
-                                    {/* Daun */}
-                                    <polygon points="120,30 140,70 200,40 180,20"
-                                        fill="transparent" stroke="#888" strokeWidth={2} strokeDasharray="6 6" />
-                                    <polygon points="280,30 260,70 200,40 220,20"
-                                        fill="transparent" stroke="#888" strokeWidth={2} strokeDasharray="6 6" />
-                                    {/* Mata */}
-                                    <circle cx="185" cy="110" r="10" fill="#fff" stroke="#222" strokeWidth={2} />
-                                    <circle cx="215" cy="110" r="10" fill="#fff" stroke="#222" strokeWidth={2} />
-                                    <circle cx="188" cy="113" r="3" fill="#222" />
-                                    <circle cx="218" cy="113" r="3" fill="#222" />
-                                </svg>
-                            </div>
-                            <div className="flex items-center justify-center gap-2 mt-2">
-                                <div className="w-7 h-7 rounded-full border-2 border-orange-400" style={{ background: colors[0] }} />
-                                <div className="w-7 h-7 rounded-full border-2 border-orange-400" style={{ background: colors[1] }} />
-                                <div className="w-7 h-7 rounded-full border-2 border-orange-400" style={{ background: colors[2] }} />
-                                <div className="w-7 h-7 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center ml-2"><span role="img" aria-label="Pencil" className="text-lg">✏️</span></div>
-                                <div className="w-7 h-7 rounded-full border-2 border-gray-300 bg-white flex items-center justify-center"><span role="img" aria-label="Eraser" className="text-lg">🧽</span></div>
-                            </div>
-                            <div className="p-4 text-center bg-yellow-100 rounded-xl mt-2">
-                                <p className="text-lg font-bold text-amber-800">
-                                    KLIK WARNA UNTUK MEWARNAI AREA. PILIH PENSIL UNTUK GAMBAR DI SELURUH AREA PUTIH. PILIH PENGHAPUS UNTUK MENGHAPUS.
-                                </p>
-                            </div>
-                        </div>
-                        <div className="mt-6 text-center">
-                            <button onClick={startGame} className="px-12 py-4 text-xl font-bold text-white transition-all duration-200 transform bg-orange-600 rounded-full shadow-lg hover:bg-orange-700 hover:scale-105">MULAI BERMAIN</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+  // Timer effect
+  useEffect(() => {
+    let interval: number;
+    if (gameStarted && !gameCompleted) {
+      interval = setInterval(() => {
+        setTimeElapsed(prev => prev + 1);
+      }, 1000);
     }
+    return () => clearInterval(interval);
+  }, [gameStarted, gameCompleted]);
 
-    // --- Modal Hasil ---
-    if (showResults) {
-        return (
-            <div className="relative min-h-screen overflow-hidden bg-center bg-cover" style={{ backgroundImage: "url(/images/bg-level.png)" }}>
-                <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-                    <div className="w-full max-w-md p-8 mx-4 bg-white border-4 border-orange-500 shadow-2xl rounded-3xl">
-                        <div className="mb-6 text-center">
-                            <div className="px-6 py-3 mb-4 text-xl font-bold text-white bg-teal-500 rounded-full">LEVEL 5 COMPLETE</div>
-                        </div>
-                        <div className="flex justify-center mb-6">
-                            {[1, 2, 3].map((star) => (
-                                <div key={star} className={`w-16 h-16 mx-2 ${star <= stars ? "text-yellow-400" : "text-gray-300"}`}>
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                    </svg>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="mb-6 text-center">
-                            <h2 className="mb-2 text-3xl font-bold text-orange-600">GOOD JOB</h2>
-                        </div>
-                        <div className="text-center">
-                            <button onClick={handleNextLevel} className="px-12 py-4 text-xl font-bold text-white transition-all duration-200 transform bg-teal-500 rounded-full shadow-lg hover:bg-teal-600 hover:scale-105">NEXT</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
+  // Check if game is complete
+  useEffect(() => {
+    const completedAreas = appleAreas.filter(area => area.fill && area.fill !== "transparent").length;
+    
+    if (completedAreas === appleAreas.length && gameStarted && !gameCompleted) {
+      setGameCompleted(true);
+      if (soundEnabled) sound.play("success");
+      setTimeout(() => setShowResults(true), 800);
     }
+  }, [appleAreas, gameStarted, gameCompleted, soundEnabled, sound]);
 
-    // --- Main Game ---
-    return (
-        <div className="relative min-h-screen overflow-hidden bg-center bg-cover flex items-center justify-center" style={{ backgroundImage: "url(/images/bg-level.png)" }}>
-            <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-            <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 w-full">
-                {/* Header */}
-                <div className="w-full max-w-4xl flex items-center justify-between px-6 py-4 bg-yellow-100 rounded-t-3xl border-b-4 border-orange-300 shadow-lg">
-                    <button onClick={() => onNavigate("menu")}
-                        className="w-12 h-12 bg-yellow-200 border-4 border-white rounded-full shadow flex items-center justify-center hover:bg-yellow-300"
-                        aria-label="Kembali">
-                        <Home className="w-7 h-7 text-orange-700" />
-                    </button>
-                    <div className="flex-1 flex items-center justify-center">
-                        <div className="px-8 py-2 bg-yellow-100 rounded-full shadow text-2xl font-bold text-orange-700 tracking-wide border-2 border-yellow-200">WARNAI BUAH APEL!</div>
-                    </div>
-                    <div className="flex gap-2">
-                        <button onClick={() => setShowHint(true)}
-                            className="w-12 h-12 bg-yellow-200 border-4 border-white rounded-full shadow flex items-center justify-center hover:bg-yellow-300"
-                            aria-label="Petunjuk">
-                            <Lightbulb className="w-7 h-7 text-orange-700" />
-                        </button>
-                        <button onClick={onSoundToggle}
-                            className="w-12 h-12 bg-yellow-200 border-4 border-white rounded-full shadow flex items-center justify-center hover:bg-yellow-300"
-                            aria-label="Sound">
-                            {soundEnabled ? <Volume2 className="w-7 h-7 text-orange-700" /> : <VolumeX className="w-7 h-7 text-orange-700" />}
-                        </button>
-                    </div>
-                </div>
+  const handleStart = () => {
+    setGameStarted(true);
+    setShowInstructions(false);
+    if (soundEnabled) sound.play("start");
+  };
 
-                {/* Main Card */}
-                <div className="w-full max-w-4xl bg-white rounded-b-3xl shadow-2xl border-x-4 border-b-4 border-orange-300 flex flex-col items-center pb-8 pt-4">
-                    <div className="flex justify-center items-center w-full mt-2">
-                        <svg
-                            ref={svgRef}
-                            viewBox="0 0 400 260"
-                            className="w-[380px] h-[240px] touch-none"
-                            style={{ touchAction: "none" }}
-                            onPointerDown={handlePointerDown}
-                        >
-                            <motion.polygon
-                                points="200,40 260,70 320,120 300,200 200,220 100,200 80,120 140,70"
-                                fill={fills[1] || "none"}
-                                animate={{ fill: fills[1] || "transparent" }}
-                                stroke={strokes[1] || "#888"}
-                                strokeWidth={strokes[1] ? 4 : 2}
-                                strokeDasharray="6 6"
-                                onClick={() => handleFill(1)}
-                                style={{ cursor: "pointer" }}
-                                transition={{ duration: 0.3 }}
-                            />
-                            {/* Outline tipis untuk area yang bisa diklik */}
-                            <motion.polygon
-                                points="200,40 260,70 320,120 300,200 200,220 100,200 80,120 140,70"
-                                fill="transparent"
-                                stroke="rgba(255,165,0,0.3)"
-                                strokeWidth={1}
-                                onClick={() => handleFill(1)}
-                                style={{ cursor: "pointer", pointerEvents: "none" }}
-                                animate={{ stroke: tool === "pencil" ? "rgba(255,165,0,0.5)" : "transparent" }}
-                                transition={{ duration: 0.2 }}
-                            />
+  const isPointInsideAppleArea = (x: number, y: number): boolean => {
+    return (x >= 130 && x <= 390 && y >= 90 && y <= 440);
+  };
 
-                            <motion.polygon
-                                points="140,70 200,120 260,70"
-                                fill={fills[2] || "none"}
-                                animate={{ fill: fills[2] || "transparent" }}
-                                stroke={strokes[2] || "#888"}
-                                strokeWidth={strokes[2] ? 4 : 2}
-                                strokeDasharray="6 6"
-                                onClick={() => handleFill(2)}
-                                style={{ cursor: "pointer" }}
-                                transition={{ duration: 0.3 }}
-                            />
-                            <motion.polygon
-                                points="140,70 200,120 260,70"
-                                fill="transparent"
-                                stroke="rgba(255,165,0,0.3)"
-                                strokeWidth={1}
-                                onClick={() => handleFill(2)}
-                                style={{ cursor: "pointer", pointerEvents: "none" }}
-                                animate={{ stroke: tool === "pencil" ? "rgba(255,165,0,0.5)" : "transparent" }}
-                                transition={{ duration: 0.2 }}
-                            />
+  const isPointInArea = (x: number, y: number, area: { id: string; path: string; fill: string }): boolean => {
+    // Bounding box check untuk setiap area apel
+    if (area.id === "apple-body-left") {
+      return x >= 150 && x <= 250 && y >= 150 && y <= 440;
+    } else if (area.id === "apple-body-right") {
+      return x >= 250 && x <= 390 && y >= 150 && y <= 440;
+    } else if (area.id === "apple-stem-left") {
+      return x >= 180 && x <= 220 && y >= 90 && y <= 150;
+    } else if (area.id === "apple-stem-right") {
+      return x >= 280 && x <= 320 && y >= 90 && y <= 150;
+    } else if (area.id === "apple-leaf-left") {
+      return x >= 125 && x <= 175 && y >= 105 && y <= 145;
+    } else if (area.id === "apple-leaf-right") {
+      return x >= 325 && x <= 375 && y >= 105 && y <= 145;
+    } else if (area.id === "apple-center") {
+      return x >= 220 && x <= 280 && y >= 160 && y <= 390;
+    }
+    return false;
+  };
 
-                            <motion.polygon
-                                points="200,120 200,220 300,200 320,120"
-                                fill={fills[3] || "none"}
-                                animate={{ fill: fills[3] || "transparent" }}
-                                stroke={strokes[3] || "#888"}
-                                strokeWidth={strokes[3] ? 4 : 2}
-                                strokeDasharray="6 6"
-                                onClick={() => handleFill(3)}
-                                style={{ cursor: "pointer" }}
-                                transition={{ duration: 0.3 }}
-                            />
-                            <motion.polygon
-                                points="200,120 200,220 300,200 320,120"
-                                fill="transparent"
-                                stroke="rgba(255,165,0,0.3)"
-                                strokeWidth={1}
-                                onClick={() => handleFill(3)}
-                                style={{ cursor: "pointer", pointerEvents: "none" }}
-                                animate={{ stroke: tool === "pencil" ? "rgba(255,165,0,0.5)" : "transparent" }}
-                                transition={{ duration: 0.2 }}
-                            />
+  const fillAreaAtPosition = (x: number, y: number) => {
+    for (let i = 0; i < appleAreas.length; i++) {
+      const area = appleAreas[i];
+      if (isPointInArea(x, y, area)) {
+        if (area.fill !== activeColor) {
+          setAppleAreas(prev => prev.map((a, index) => 
+            index === i ? { ...a, fill: activeColor } : a
+          ));
+          if (soundEnabled) sound.play("match");
+        }
+        break;
+      }
+    }
+  };
 
-                            <motion.polygon
-                                points="200,120 200,220 100,200 80,120"
-                                fill={fills[4] || "none"}
-                                animate={{ fill: fills[4] || "transparent" }}
-                                stroke={strokes[4] || "#888"}
-                                strokeWidth={strokes[4] ? 4 : 2}
-                                strokeDasharray="6 6"
-                                onClick={() => handleFill(4)}
-                                style={{ cursor: "pointer" }}
-                                transition={{ duration: 0.3 }}
-                            />
-                            <motion.polygon
-                                points="200,120 200,220 100,200 80,120"
-                                fill="transparent"
-                                stroke="rgba(255,165,0,0.3)"
-                                strokeWidth={1}
-                                onClick={() => handleFill(4)}
-                                style={{ cursor: "pointer", pointerEvents: "none" }}
-                                animate={{ stroke: tool === "pencil" ? "rgba(255,165,0,0.5)" : "transparent" }}
-                                transition={{ duration: 0.2 }}
-                            />
+  const eraseAreaAtPosition = (x: number, y: number) => {
+    for (let i = 0; i < appleAreas.length; i++) {
+      const area = appleAreas[i];
+      if (isPointInArea(x, y, area)) {
+        if (area.fill !== "transparent") {
+          setAppleAreas(prev => prev.map((a, index) => 
+            index === i ? { ...a, fill: "transparent" } : a
+          ));
+        }
+        break;
+      }
+    }
+  };
 
-                            {/* Daun */}
-                            <motion.polygon
-                                points="120,30 140,70 200,40 180,20"
-                                fill={fills[5] || "none"}
-                                animate={{ fill: fills[5] || "transparent" }}
-                                stroke={strokes[5] || "#888"}
-                                strokeWidth={strokes[5] ? 4 : 2}
-                                strokeDasharray="6 6"
-                                onClick={() => handleFill(5)}
-                                style={{ cursor: "pointer" }}
-                                transition={{ duration: 0.3 }}
-                            />
-                            <motion.polygon
-                                points="120,30 140,70 200,40 180,20"
-                                fill="transparent"
-                                stroke="rgba(255,165,0,0.3)"
-                                strokeWidth={1}
-                                onClick={() => handleFill(5)}
-                                style={{ cursor: "pointer", pointerEvents: "none" }}
-                                animate={{ stroke: tool === "pencil" ? "rgba(255,165,0,0.5)" : "transparent" }}
-                                transition={{ duration: 0.2 }}
-                            />
+  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const svg = svgRef.current;
+    if (!svg) return;
 
-                            <motion.polygon
-                                points="280,30 260,70 200,40 220,20"
-                                fill={fills[6] || "none"}
-                                animate={{ fill: fills[6] || "transparent" }}
-                                stroke={strokes[6] || "#888"}
-                                strokeWidth={strokes[6] ? 4 : 2}
-                                strokeDasharray="6 6"
-                                onClick={() => handleFill(6)}
-                                style={{ cursor: "pointer" }}
-                                transition={{ duration: 0.3 }}
-                            />
-                            <motion.polygon
-                                points="280,30 260,70 200,40 220,20"
-                                fill="transparent"
-                                stroke="rgba(255,165,0,0.3)"
-                                strokeWidth={1}
-                                onClick={() => handleFill(6)}
-                                style={{ cursor: "pointer", pointerEvents: "none" }}
-                                animate={{ stroke: tool === "pencil" ? "rgba(255,165,0,0.5)" : "transparent" }}
-                                transition={{ duration: 0.2 }}
-                            />
+    const rect = svg.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 500;
+    const y = ((e.clientY - rect.top) / rect.height) * 500;
 
-                            {/* Mata */}
-                            <circle cx="185" cy="110" r="10" fill="#fff" stroke="#222" strokeWidth={2} />
-                            <circle cx="215" cy="110" r="10" fill="#fff" stroke="#222" strokeWidth={2} />
-                            <circle cx="188" cy="113" r="3" fill="#222" />
-                            <circle cx="218" cy="113" r="3" fill="#222" />
+    if (!isPointInsideAppleArea(x, y)) return;
 
-                            {/* Pencil drawing paths */}
-                            {Object.entries(pencilPaths).map(([areaId, path]) => (
-                                <path
-                                    key={`pencil-${areaId}`}
-                                    d={path}
-                                    stroke="#444444"
-                                    strokeWidth="3"
-                                    fill="none"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            ))}
+    if (activeTool === "fill") {
+      fillAreaAtPosition(x, y);
+    } else if (activeTool === "draw") {
+      setIsDrawing(true);
+      setCurrentPath(`M ${x} ${y}`);
+      setLastPoint({x, y});
+    } else if (activeTool === "eraser") {
+      eraseAreaAtPosition(x, y);
+    }
+  };
 
-                            {/* Free pencil drawing path */}
-                            {freePencilPath && (
-                                <path
-                                    d={freePencilPath}
-                                    stroke="#444444"
-                                    strokeWidth="3"
-                                    fill="none"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                />
-                            )}
-                        </svg>
+  const handleCanvasMouseMove = (e: React.MouseEvent) => {
+    if (!isDrawing || activeTool !== "draw") return;
 
-                    </div>
+    const svg = svgRef.current;
+    if (!svg) return;
 
-                    {/* Palet warna dan tools */}
-                    <div className="flex items-center justify-center gap-4 mt-6 mb-2">
-                        {/* Palet Warna - klik untuk set mode color dan warna */}
-                        {colors.map((color) => (
-                            <button key={color}
-                                className={`w-10 h-10 rounded-full border-4 ${selectedColor === color && tool === "color" ? "border-orange-500 scale-110" : "border-gray-300"} transition`}
-                                style={{ background: color }}
-                                onClick={() => {
-                                    setSelectedColor(color);
-                                    setTool("color");
-                                }}
-                                aria-label={`Pilih warna ${color}`} />
-                        ))}
+    const rect = svg.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 500;
+    const y = ((e.clientY - rect.top) / rect.height) * 500;
 
-                        {/* Tools - Pencil dan Eraser */}
-                        <div className="w-1 h-8 bg-gray-300 mx-2"></div>
+    if (!isPointInsideAppleArea(x, y)) return;
 
-                        {/* Pencil - untuk menggambar dengan abu-abu */}
-                        <button className={`w-10 h-10 rounded-full border-4 flex items-center justify-center bg-white ${tool === "pencil" ? "border-orange-500 scale-110" : "border-gray-300"} transition`}
-                            onClick={() => setTool("pencil")} aria-label="Pilih pensil">
-                            <span role="img" aria-label="Pencil" className="text-2xl">✏️</span>
-                        </button>
-                        {/* Eraser - untuk menghapus warna */}
-                        <button className={`w-10 h-10 rounded-full border-4 flex items-center justify-center bg-white ${tool === "eraser" ? "border-orange-500 scale-110" : "border-gray-300"} transition`}
-                            onClick={() => setTool("eraser")} aria-label="Pilih penghapus">
-                            <span role="img" aria-label="Eraser" className="text-2xl">🧽</span>
-                        </button>
-                        {/* Clear All Pencil - tombol untuk hapus semua gambar pensil */}
-                        {freePencilPath && (
-                            <button
-                                className="w-10 h-10 rounded-full border-4 flex items-center justify-center bg-white border-red-400 hover:border-red-500 transition"
-                                onClick={clearFreePencil}
-                                aria-label="Hapus semua gambar pensil"
-                                title="Hapus semua gambar pensil"
-                            >
-                                <span role="img" aria-label="Clear" className="text-xl">🗑️</span>
-                            </button>
-                        )}
-                    </div>
+    if (lastPoint) {
+      setCurrentPath(prev => prev + ` L ${x} ${y}`);
+      setLastPoint({x, y});
+    }
+  };
 
-                    {/* Indicator tool yang sedang aktif */}
-                    <div className="text-center mb-4">
-                        <p className="text-sm font-bold text-gray-600">
-                            Tool: {tool === "color" ? `🎨 Warna (${selectedColor})` : tool === "pencil" ? "✏️ Pensil (Gambar di Seluruh Area)" : "🧽 Penghapus"}
-                        </p>
-                    </div>
+  const handleCanvasMouseUp = () => {
+    if (!isDrawing) return;
+    
+    setIsDrawing(false);
+    
+    if (activeTool === "draw" && currentPath) {
+      setDrawingPaths(prev => [...prev, currentPath]);
+      setCurrentPath("");
+      if (soundEnabled) sound.play("match");
+    }
+    
+    setLastPoint(null);
+  };
 
-                    {/* Tombol Next */}
-                    <div className="flex justify-end w-full pr-8 mt-4">
-                        <button onClick={finishGame}
-                            className="w-16 h-16 bg-teal-400 rounded-full flex items-center justify-center shadow-lg hover:bg-teal-500 transition text-white text-3xl font-bold border-4 border-white"
-                            aria-label="Lanjut">
-                            <span>&#8594;</span>
-                        </button>
-                    </div>
-                </div>
+  const handleCanvasTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const svg = svgRef.current;
+    if (!svg || e.touches.length === 0) return;
+
+    const rect = svg.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = ((touch.clientX - rect.left) / rect.width) * 500;
+    const y = ((touch.clientY - rect.top) / rect.height) * 500;
+
+    if (!isPointInsideAppleArea(x, y)) return;
+
+    if (activeTool === "fill") {
+      fillAreaAtPosition(x, y);
+    } else if (activeTool === "draw") {
+      setIsDrawing(true);
+      setCurrentPath(`M ${x} ${y}`);
+      setLastPoint({x, y});
+    } else if (activeTool === "eraser") {
+      eraseAreaAtPosition(x, y);
+    }
+  };
+
+  const handleCanvasTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (!isDrawing || activeTool !== "draw") return;
+
+    const svg = svgRef.current;
+    if (!svg || e.touches.length === 0) return;
+
+    const rect = svg.getBoundingClientRect();
+    const touch = e.touches[0];
+    const x = ((touch.clientX - rect.left) / rect.width) * 500;
+    const y = ((touch.clientY - rect.top) / rect.height) * 500;
+
+    if (!isPointInsideAppleArea(x, y)) return;
+
+    if (lastPoint) {
+      setCurrentPath(prev => prev + ` L ${x} ${y}`);
+      setLastPoint({x, y});
+    }
+  };
+
+  const handleCanvasTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (!isDrawing) return;
+    
+    setIsDrawing(false);
+    
+    if (activeTool === "draw" && currentPath) {
+      setDrawingPaths(prev => [...prev, currentPath]);
+      setCurrentPath("");
+      if (soundEnabled) sound.play("match");
+    }
+    
+    setLastPoint(null);
+  };
+
+  const handleRestart = () => {
+    setAppleAreas(prev => prev.map(area => ({ ...area, fill: "transparent" })));
+    setDrawingPaths([]);
+    setCurrentPath("");
+    setGameCompleted(false);
+    setGameStarted(false);
+    setShowInstructions(true);
+    setShowResults(false);
+    setTimeElapsed(0);
+  };
+
+  return (
+    <>
+      <BaseGameLayout
+        title="Level 5: Mewarnai Apel"
+        onNavigate={onNavigate}
+        onShowInstructions={() => setShowInstructions(true)}
+        backgroundImage="url('/images/IMG_20250724_015554.png')"
+      >
+        <div className="w-full h-full flex flex-col items-center justify-center relative p-2 md:p-4 overflow-hidden">
+          {/* Apple SVG - bentuk geometris sesuai gambar */}
+          <div className="flex-1 flex items-center justify-center mb-2 md:mb-4 max-h-[60vh] md:max-h-none">
+            <svg 
+              ref={svgRef}
+              viewBox="0 0 500 500" 
+              className="w-[280px] h-[280px] md:w-[350px] md:h-[350px] lg:w-[400px] lg:h-[400px] bg-white rounded-lg shadow-lg cursor-crosshair select-none"
+              onMouseDown={handleCanvasMouseDown}
+              onMouseMove={handleCanvasMouseMove}
+              onMouseUp={handleCanvasMouseUp}
+              onMouseLeave={() => setIsDrawing(false)}
+              onTouchStart={handleCanvasTouchStart}
+              onTouchMove={handleCanvasTouchMove}
+              onTouchEnd={handleCanvasTouchEnd}
+            >
+              {/* Apple outline areas - bentuk geometris */}
+              {appleAreas.map(area => (
+                <path
+                  key={area.id}
+                  id={area.id}
+                  d={area.path}
+                  fill={area.fill}
+                  stroke="#666"
+                  strokeWidth={2}
+                  strokeDasharray="4 4"
+                  className="hover:stroke-orange-500 transition-colors"
+                />
+              ))}
+              
+              {/* Drawing paths - pensil coret-coret */}
+              {drawingPaths.map((path, index) => (
+                <path
+                  key={index}
+                  d={path}
+                  fill="none"
+                  stroke={activeColor}
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              ))}
+              
+              {/* Current drawing path */}
+              {currentPath && (
+                <path
+                  d={currentPath}
+                  fill="none"
+                  stroke={activeColor}
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              )}
+            </svg>
+          </div>
+
+          {/* Tool palette - posisi di bawah gambar untuk mobile landscape */}
+          <div className="bg-yellow-200 rounded-2xl p-3 shadow-lg max-w-md w-full">
+            <div className="flex items-center justify-center gap-3 md:gap-4">
+              {/* Color palette - 3 warna untuk mode fill area */}
+              {colors.map((color, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    setActiveTool("fill"); // Mode fill area
+                    setActiveColor(color);
+                  }}
+                  className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 md:border-3 transition-all ${
+                    activeColor === color && activeTool === "fill" 
+                      ? "border-gray-800 scale-110 shadow-lg" 
+                      : "border-gray-300"
+                  }`}
+                  style={{ backgroundColor: color }}
+                  title="Warnai Area"
+                />
+              ))}
+              
+              {/* Pensil - untuk mode coret-coret */}
+              <button
+                onClick={() => setActiveTool("draw")}
+                className={`w-10 h-10 md:w-12 md:h-12 rounded-lg border-2 ${
+                  activeTool === "draw" ? "bg-yellow-400 text-white border-yellow-500" : "bg-white border-gray-300"
+                } flex items-center justify-center text-sm md:text-lg transition-all`}
+                title="Pensil Coret-Coret"
+              >
+                ✏️
+              </button>
+              
+              {/* Penghapus */}
+              <button
+                onClick={() => {
+                  setActiveTool("eraser");
+                  setDrawingPaths([]);
+                  setCurrentPath("");
+                }}
+                className={`w-10 h-10 md:w-12 md:h-12 rounded-lg border-2 ${
+                  activeTool === "eraser" ? "bg-blue-400 text-white border-blue-500" : "bg-white border-gray-300"
+                } flex items-center justify-center text-sm md:text-lg transition-all`}
+                title="Penghapus"
+              >
+                🗑️
+              </button>
             </div>
+          </div>
         </div>
-    );
-};
+      </BaseGameLayout>
 
-export default GameLevel5;
+      {/* Instruction Modal */}
+      {showInstructions && (
+        <InstructionModal
+          isOpen={showInstructions}
+          onClose={handleStart}
+          title="Level 5: Mewarnai Apel"
+          imageSrc="/images/IMG_20250724_015554.png"
+          description="Warnai seluruh area apel dengan 3 warna yang tersedia. Klik warna untuk mewarnai per area, klik pensil untuk coret-coret bebas, atau gunakan penghapus untuk menghapus."
+          showStartButton={true}
+          startButtonText="Mulai Mewarnai"
+        />
+      )}
+
+      {/* Game Result Modal */}
+      {showResults && (
+        <GameResultModal
+          isOpen={showResults}
+          level={5}
+          stars={stars}
+          timeElapsed={timeElapsed}
+          mistakes={0}
+          onNextLevel={handleRestart}
+        />
+      )}
+    </>
+  );
+}

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSound } from "../hooks/useSound";
-import { Home, HelpCircle, Volume2, VolumeX } from "lucide-react";
 import { Screen } from "../types/GameTypes";
+import InstructionModal from "./InstructionModal";
+import BaseGameLayout from "./BaseGameLayout";
+import GameResultModal from "./GameResultModal";
 
 interface GameLevel1Props {
   onNavigate: (screen: Screen) => void;
@@ -63,7 +65,6 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const gameAreaRef = useRef<HTMLDivElement>(null);
 
-  // Initialize responsive positions
   const initializePositions = useCallback(() => {
     const gameArea = gameAreaRef.current;
     if (!gameArea) return;
@@ -76,15 +77,14 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     let basketPositions: { x: number; y: number }[];
 
     if (isMobile && isPortrait) {
-      // Mobile Portrait: Stack vertically
       const centerX = rect.width / 2;
       const topY = Math.max(100, rect.height * 0.15);
       const bottomY = Math.max(rect.height * 0.65, rect.height - 120);
 
       fruitPositions = [
-        { x: centerX - 80, y: topY },
+        { x: centerX - 200, y: topY },
         { x: centerX, y: topY },
-        { x: centerX + 80, y: topY },
+        { x: centerX + 200, y: topY },
       ];
 
       basketPositions = [
@@ -93,17 +93,16 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
         { x: centerX + 80, y: bottomY },
       ];
     } else if (isMobile && !isPortrait) {
-      // Mobile Landscape: Optimized for limited height
-      const availableWidth = rect.width - 100; // Leave margins
+      const availableWidth = rect.width - 100;
       const spacing = Math.min(100, availableWidth / 3);
       const startX = Math.max(50, (rect.width - spacing * 2) / 2);
-      const topY = Math.max(40, rect.height * 0.15); // Much higher position
-      const bottomY = Math.max(rect.height * 0.6, rect.height - 80); // Not too low
+      const topY = Math.max(40, rect.height * 0.15);
+      const bottomY = Math.max(rect.height * 0.6, rect.height - 80);
 
       fruitPositions = [
-        { x: startX, y: topY },
-        { x: startX + spacing, y: topY },
-        { x: startX + spacing * 2, y: topY },
+        { x: startX - 100, y: topY },
+        { x: startX + spacing - 100, y: topY },
+        { x: startX + spacing * 2 - 100, y: topY },
       ];
 
       basketPositions = [
@@ -112,26 +111,24 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
         { x: startX + spacing * 2, y: bottomY },
       ];
     } else {
-      // Desktop: Original layout with responsive spacing
       const spacing = Math.min(150, rect.width / 5);
       const startX = Math.max(150, (rect.width - spacing * 2) / 2);
       const fruitY = Math.max(120, rect.height * 0.25);
       const basketY = Math.max(rect.height * 0.65, rect.height - 150);
 
       fruitPositions = [
-        { x: startX, y: fruitY },
-        { x: startX + spacing, y: fruitY },
-        { x: startX + spacing * 2, y: fruitY },
+        { x: startX - 40, y: fruitY },
+        { x: startX + spacing - 40, y: fruitY },
+        { x: startX + spacing * 2 - 40, y: fruitY },
       ];
 
       basketPositions = [
-        { x: startX, y: basketY },
-        { x: startX + spacing, y: basketY },
-        { x: startX + spacing * 2, y: basketY },
+        { x: startX - 50, y: basketY },
+        { x: startX + spacing - 50, y: basketY },
+        { x: startX + spacing * 2 - 50, y: basketY },
       ];
     }
 
-    // Initialize fruits with responsive positions
     setFruits([
       {
         id: "1",
@@ -162,7 +159,6 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
       },
     ]);
 
-    // Update basket positions (baskets are created with initial positions, we need to update them)
     baskets[0].x = basketPositions[0].x;
     baskets[0].y = basketPositions[0].y;
     baskets[1].x = basketPositions[1].x;
@@ -171,28 +167,20 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     baskets[2].y = basketPositions[2].y;
   }, [baskets]);
 
-  // Run initialize when game area mounts (after closing instructions) and on viewport/orientation changes
   useEffect(() => {
-    // When the actual game area is mounted (showInstructions=false), schedule init for next frame
     if (gameAreaRef.current) {
       requestAnimationFrame(() => initializePositions());
-      // Fallback microtask to ensure layout ready
       setTimeout(initializePositions, 0);
     }
-
     const handleResize = () => initializePositions();
     const handleOrientation = () => initializePositions();
-
     window.addEventListener("resize", handleResize);
     window.addEventListener("orientationchange", handleOrientation);
-
-    // Observe container size changes (safer across mobile UI chrome changes)
     let ro: ResizeObserver | null = null;
     if (typeof ResizeObserver !== "undefined" && gameAreaRef.current) {
       ro = new ResizeObserver(() => initializePositions());
       ro.observe(gameAreaRef.current);
     }
-
     return () => {
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", handleOrientation);
@@ -246,14 +234,10 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
   };
 
   const startGame = async () => {
-    // Play audio first within the click gesture and unlock on iOS
     if (soundEnabled) {
-      console.log("Starting game with sound enabled");
       try {
         await unlock();
-      } catch {
-        /* ignore */
-      }
+      } catch {}
       play("start");
       play("bgm");
     }
@@ -267,7 +251,6 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     setTimeElapsed(0);
     setStartTime(Date.now());
 
-    // Reset all fruits to not placed
     setFruits((prev) =>
       prev.map((fruit) => ({
         ...fruit,
@@ -276,18 +259,16 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
       }))
     );
 
-    // Ensure positions computed right after starting
     requestAnimationFrame(() => initializePositions());
   };
 
   const calculateStars = (time: number, mistakeCount: number): number => {
-    if (mistakeCount === 0 && time <= 10000) return 3; // 3 stars: perfect, ≤10 seconds
-    if (mistakeCount <= 1 && time <= 20000) return 2; // 2 stars: ≤1 mistake, ≤20 seconds
-    return 1; // 1 star: more than 1 mistake or >20 seconds
+    if (mistakeCount === 0 && time <= 10000) return 3;
+    if (mistakeCount <= 1 && time <= 20000) return 2;
+    return 1;
   };
 
   const checkGameCompletion = useCallback(() => {
-    // Only check if game is started and fruits array is not empty
     if (!gameStarted || fruits.length === 0) return;
 
     const allPlaced = fruits.every((fruit) => fruit.isPlaced);
@@ -367,8 +348,7 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
   const getDropRadius = () => {
     const isMobile = window.innerWidth < 768;
     const isPortrait = window.innerHeight > window.innerWidth;
-    if (!isMobile) return 80; // desktop default
-    // Slightly smaller radius in tight landscape; a bit larger in portrait
+    if (!isMobile) return 80;
     return isPortrait ? 80 : 70;
   };
 
@@ -378,7 +358,6 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     const draggedFruitObj = fruits.find((f) => f.id === draggedFruit);
     if (!draggedFruitObj) return;
 
-    // Check if fruit is dropped on correct basket
     let correctBasket = false;
     const radius = getDropRadius();
     for (const basket of baskets) {
@@ -388,9 +367,7 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
       );
 
       if (distance < radius) {
-        // Within basket range
         if (draggedFruitObj.color === basket.color) {
-          // Correct placement
           setFruits((prev) =>
             prev.map((f) =>
               f.id === draggedFruit
@@ -409,12 +386,10 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
             play("match");
           }
         } else {
-          // Wrong placement
           setMistakes((prev) => prev + 1);
           if (soundEnabled) {
             play("error");
           }
-          // Return fruit to original position
           const originalPos = getOriginalFruitPosition(draggedFruitObj.type);
           setFruits((prev) =>
             prev.map((f) =>
@@ -434,7 +409,6 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     }
 
     if (!correctBasket) {
-      // Return to original position if not dropped on any basket
       const originalPos = getOriginalFruitPosition(draggedFruitObj.type);
       setFruits((prev) =>
         prev.map((f) =>
@@ -454,7 +428,6 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     setDragOffset({ x: 0, y: 0 });
   };
 
-  // Touch event handlers for mobile
   const handleTouchStart = (e: React.TouchEvent, fruitId: string) => {
     if (!gameStarted || gameCompleted) return;
 
@@ -504,6 +477,7 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     onNextLevel();
   };
 
+  // ===== RENDER (STYLE-ONLY CHANGES) =====
   const renderFruit = (fruit: Fruit) => {
     const imgSrc: Record<Fruit["type"], string> = {
       apple: "/images/fruits/apple.png",
@@ -514,10 +488,13 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     return (
       <div
         key={fruit.id}
-        className={`absolute w-16 h-16 cursor-pointer transform transition-transform ${
+        className={`absolute cursor-pointer transition-transform ${
           fruit.isDragging ? "scale-110 z-20" : "hover:scale-105 z-10"
         } ${fruit.isPlaced ? "cursor-default" : ""}`}
         style={{
+          // ukuran disesuaikan agar mirip SS
+          width: "clamp(72px,8vw,120px)",
+          height: "clamp(72px,8vw,120px)",
           left: fruit.x,
           top: fruit.y,
           pointerEvents: fruit.isPlaced ? "none" : "auto",
@@ -545,250 +522,67 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     return (
       <div
         key={basket.id}
-        className="absolute w-20 h-16"
-        style={{ left: basket.x - 10, top: basket.y }}
+        // NOTE: tetap pakai anchor top-left sesuai logika aslimu
+        className="absolute"
+        style={{
+          left: basket.x - 10, // offset kecil seperti sebelumnya
+          top: basket.y - 25,
+          width: "clamp(110px,12vw,180px)",
+          height: "clamp(90px,10vw,140px)",
+        }}
       >
         <img
           src={basketImg[basket.color]}
           alt={`basket-${basket.color}`}
-          className="object-contain w-full h-full pointer-events-none select-none"
+          className="object-contain w-40 h-40 pointer-events-none select-none"
           draggable={false}
         />
       </div>
     );
   };
 
-  if (showInstructions) {
-    return (
-      <div
-        className="relative min-h-screen overflow-hidden bg-center bg-cover"
-        style={{ backgroundImage: "url(/images/bg-level.png)" }}
-      >
-        {/* Background overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-
-        {/* Background elements */}
-        <div className="absolute inset-0">
-          <div className="absolute w-8 h-12 rounded-full left-4 top-20 bg-amber-700"></div>
-          <div className="absolute w-12 h-16 bg-green-600 rounded-full left-2 top-16"></div>
-          <div className="absolute w-6 h-10 rounded-full right-8 top-24 bg-amber-600"></div>
-          <div className="absolute w-10 bg-green-500 rounded-full right-6 top-20 h-14"></div>
-        </div>
-
-        {/* Top Navigation */}
-        <div className="absolute z-20 flex items-center justify-between top-4 left-4 right-4">
-          <button
-            onClick={() => onNavigate("menu")}
-            className="flex items-center justify-center w-12 h-12 bg-yellow-400 rounded-full shadow-lg hover:bg-yellow-500"
-          >
-            <Home className="w-6 h-6 text-amber-800" />
-          </button>
-          <button
-            onClick={onSoundToggle}
-            className="flex items-center justify-center w-12 h-12 bg-yellow-400 rounded-full shadow-lg hover:bg-yellow-500"
-          >
-            {soundEnabled ? (
-              <Volume2 className="w-6 h-6 text-amber-800" />
-            ) : (
-              <VolumeX className="w-6 h-6 text-amber-800" />
-            )}
-          </button>
-        </div>
-
-        {/* Instructions Modal */}
-        <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-          <div className="w-full max-w-2xl p-8 mx-4 bg-orange-500 shadow-2xl rounded-3xl">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="px-6 py-2 text-lg font-bold text-white bg-red-500 rounded-full">
-                PETUNJUK
-              </div>
-              <button
-                onClick={startGame}
-                className="flex items-center justify-center w-10 h-10 bg-yellow-400 rounded-full hover:bg-yellow-500"
-              >
-                <span className="text-2xl font-bold text-amber-800">X</span>
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 mb-6 bg-white rounded-2xl">
-              {/* Visual example */}
-              <div className="flex items-center justify-center mb-4">
-                <div className="relative w-12 h-12 mr-4 bg-yellow-400 rounded-lg">
-                  <div className="absolute transform -translate-x-1/2 -top-2 left-1/2">
-                    <div className="flex">
-                      <div className="w-1 h-3 transform bg-green-500 rounded-t-full -rotate-12"></div>
-                      <div className="w-1 h-3 bg-green-500 rounded-t-full"></div>
-                      <div className="w-1 h-3 transform bg-green-500 rounded-t-full rotate-12"></div>
-                    </div>
-                  </div>
-                </div>
-                <div className="mx-4 text-4xl">→</div>
-                <div className="relative w-16 h-12 bg-red-100 border-4 border-red-500 rounded-b-full">
-                  <div className="absolute w-12 h-2 transform -translate-x-1/2 bg-red-500 rounded-full -top-1 left-1/2"></div>
-                </div>
-              </div>
-
-              <div className="p-4 text-center bg-yellow-100 rounded-xl">
-                <p className="text-lg font-bold text-amber-800">
-                  LETAKKAN BUAH DI KERANJANG SESUAI DENGAN WARNANYA
-                </p>
-              </div>
-            </div>
-
-            {/* Start Button */}
-            <div className="mt-6 text-center">
-              <button
-                onClick={startGame}
-                className="px-12 py-4 text-xl font-bold text-white transition-all duration-200 transform bg-orange-600 rounded-full shadow-lg hover:bg-orange-700 hover:scale-105"
-              >
-                MULAI BERMAIN
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (showResults) {
     return (
-      <div
-        className="relative min-h-screen overflow-hidden bg-center bg-cover"
-        style={{ backgroundImage: "url(/images/bg-level.png)" }}
-      >
-        {/* Background overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-
-        {/* Results Modal */}
-        <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-          <div className="w-full max-w-md p-8 mx-4 bg-white border-4 border-orange-500 shadow-2xl rounded-3xl">
-            {/* Header */}
-            <div className="mb-6 text-center">
-              <div className="px-6 py-3 mb-4 text-xl font-bold text-white bg-teal-500 rounded-full">
-                LEVEL 1 COMPLETE
-              </div>
-            </div>
-
-            {/* Stars */}
-            <div className="flex justify-center mb-6">
-              {[1, 2, 3].map((star) => (
-                <div
-                  key={star}
-                  className={`w-16 h-16 mx-2 ${
-                    star <= stars ? "text-yellow-400" : "text-gray-300"
-                  }`}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="w-full h-full"
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </div>
-              ))}
-            </div>
-
-            {/* Message */}
-            <div className="mb-6 text-center">
-              <h2 className="mb-2 text-3xl font-bold text-orange-600">
-                GOOD JOB
-              </h2>
-              <p className="text-lg text-gray-600">
-                Waktu: {Math.round(timeElapsed / 1000)} detik
-              </p>
-              <p className="text-lg text-gray-600">Kesalahan: {mistakes}</p>
-            </div>
-
-            {/* Next Button */}
-            <div className="text-center">
-              <button
-                onClick={handleNextLevel}
-                className="px-12 py-4 text-xl font-bold text-white transition-all duration-200 transform bg-teal-500 rounded-full shadow-lg hover:bg-teal-600 hover:scale-105"
-              >
-                NEXT
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <GameResultModal
+        isOpen={showResults}
+        level={1}
+        stars={stars}
+        timeElapsed={timeElapsed}
+        mistakes={mistakes}
+        onNextLevel={handleNextLevel}
+      />
     );
   }
 
   return (
-    <div
-      className="relative min-h-screen overflow-hidden bg-center bg-cover"
-      style={{ backgroundImage: "url(/images/bg-level.png)" }}
-    >
-      {/* Background elements */}
-      <div className="absolute inset-0">
-        <div className="absolute w-8 h-12 rounded-full left-4 top-20 bg-amber-700"></div>
-        <div className="absolute w-12 h-16 bg-green-600 rounded-full left-2 top-16"></div>
-        <div className="absolute w-6 h-10 rounded-full right-8 top-24 bg-amber-600"></div>
-        <div className="absolute w-10 bg-green-500 rounded-full right-6 top-20 h-14"></div>
-      </div>
-
-      {/* Top Navigation */}
-      <div
-        className="absolute z-20 flex items-center justify-between top-2 left-2 right-2 landscape:top-1 landscape:left-1 landscape:right-1 md:top-4 md:left-4 md:right-4"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
-        <button
-          onClick={() => onNavigate("menu")}
-          className="flex items-center justify-center w-10 h-10 bg-yellow-400 rounded-full shadow-lg hover:bg-yellow-500 landscape:w-8 landscape:h-8 md:w-12 md:h-12"
-        >
-          <Home className="w-5 h-5 text-amber-800 landscape:w-4 landscape:h-4 md:w-6 md:h-6" />
-        </button>
-
-        <div className="px-3 py-1 text-sm font-bold bg-yellow-400 rounded-full shadow-lg text-amber-800 landscape:px-2 landscape:py-0.5 landscape:text-xs md:px-6 md:py-2 md:text-lg">
-          MASUKAN BUAH KEDALAM KERANJANG YANG TEPAT!
-        </div>
-
-        <button
-          onClick={() => setShowInstructions(true)}
-          className="flex items-center justify-center w-10 h-10 bg-yellow-400 rounded-full shadow-lg hover:bg-yellow-500 landscape:w-8 landscape:h-8 md:w-12 md:h-12"
-        >
-          <HelpCircle className="w-5 h-5 text-amber-800 landscape:w-4 landscape:h-4 md:w-6 md:h-6" />
-        </button>
-      </div>
-
-      {/* Game Area */}
-      <div
-        ref={gameAreaRef}
-        className="absolute inset-0 top-12 landscape:top-8 md:top-20"
+    <>
+      <BaseGameLayout
+        onNavigate={onNavigate}
+        onShowInstructions={() => setShowInstructions(true)}
+        title="MASUKAN BUAH KEDALAM KERANJANG YANG TEPAT!"
+        gameAreaRef={gameAreaRef}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        style={{ touchAction: "none", paddingTop: "env(safe-area-inset-top)" }}
       >
-        {/* Game Content Container - Mobile Responsive */}
-        <div
-          className="relative w-full h-full mx-1 mt-1 bg-white bg-opacity-90 rounded-t-3xl md:mx-4 md:mt-4 landscape:mt-0.5"
-          style={{
-            height: "100%",
-            minHeight: "min(100dvh, 700px)",
-          }}
-        >
-          {/* Fruits */}
-          {fruits.map(renderFruit)}
+        {/* Buah */}
+        {fruits.map(renderFruit)}
 
-          {/* Baskets */}
-          {baskets.map(renderBasket)}
+        {/* Keranjang */}
+        {baskets.map(renderBasket)}
+      </BaseGameLayout>
 
-          {/* Game Stats */}
-          <div className="absolute p-1 text-xs bg-white rounded-lg shadow-lg bg-opacity-80 md:p-3 md:text-sm top-1 right-1 landscape:top-2 landscape:right-2 md:top-4 md:right-4">
-            <div className="text-xs font-bold text-gray-700 md:text-sm">
-              <div>Waktu: {Math.round((Date.now() - startTime) / 1000)}s</div>
-              <div>Kesalahan: {mistakes}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+      {/* Instruction Modal - Overlay */}
+      <InstructionModal
+        isOpen={showInstructions}
+        onClose={startGame}
+        title="PETUNJUK"
+        imageSrc="/images/petunjuk/level1.png"
+        description="LETAKKAN BUAH DI KERANJANG SESUAI DENGAN WARNANYA"
+      />
+    </>
   );
 };
 

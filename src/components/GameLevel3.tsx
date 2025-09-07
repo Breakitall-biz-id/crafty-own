@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useSound } from "../hooks/useSound";
-import { Home, HelpCircle, Volume2, VolumeX, X } from "lucide-react";
 import { Screen } from "../types/GameTypes";
+import InstructionModal from "./InstructionModal";
+import BaseGameLayout from "./BaseGameLayout";
+import GameResultModal from "./GameResultModal";
 
 interface GameLevel3Props {
   onNavigate: (screen: Screen) => void;
@@ -59,31 +61,31 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
   const appleRef = useRef<HTMLDivElement>(null);
   const { play, stop, unlock } = useSound(soundEnabled);
 
-  // Define cutting lines (3 vertical lines on the apple)
+  // Define cutting lines (3 vertical lines on the apple) - adjusted for current size
   const [cutLines, setCutLines] = useState<CutLine[]>([
     {
       id: 1,
-      x: 320,
-      startY: 200,
-      endY: 380,
+      x: 150,
+      startY: 120,
+      endY: 250,
       isCompleted: false,
       progress: 0,
       accuracy: 100,
     },
     {
       id: 2,
-      x: 400,
-      startY: 200,
-      endY: 380,
+      x: 200,
+      startY: 120,
+      endY: 250,
       isCompleted: false,
       progress: 0,
       accuracy: 100,
     },
     {
       id: 3,
-      x: 480,
-      startY: 200,
-      endY: 380,
+      x: 250,
+      startY: 120,
+      endY: 250,
       isCompleted: false,
       progress: 0,
       accuracy: 100,
@@ -162,7 +164,7 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
     x: number,
     y: number,
     line: CutLine,
-    tolerance: number = 30
+    tolerance: number = 20
   ): boolean => {
     // Use the apple element's real position and size for line hit testing
     const gameArea = gameAreaRef.current;
@@ -181,8 +183,8 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
     const linePercents = [0.3, 0.5, 0.7];
     const idx = Math.max(0, Math.min(2, line.id - 1));
     const lineX = appleLeft + appleWidth * linePercents[idx];
-    const startY = appleTop;
-    const endY = appleTop + appleHeight;
+    const startY = appleTop + appleHeight * 0.2;
+    const endY = appleTop + appleHeight * 0.8;
 
     if (Math.abs(x - lineX) > tolerance) return false;
     return y >= startY - tolerance && y <= endY + tolerance;
@@ -195,8 +197,8 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
 
     const gameRect = gameArea.getBoundingClientRect();
     const appleRect = appleEl.getBoundingClientRect();
-    const startY = appleRect.top - gameRect.top;
-    const endY = startY + appleRect.height;
+    const startY = appleRect.top - gameRect.top + appleRect.height * 0.2;
+    const endY = appleRect.top - gameRect.top + appleRect.height * 0.8;
 
     if (y < startY) return 0;
     if (y > endY) return 100;
@@ -427,11 +429,11 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
     const gameRect = gameArea.getBoundingClientRect();
     const appleRect = appleEl.getBoundingClientRect();
     const appleLeft = appleRect.left - gameRect.left;
-    const appleTop = appleRect.top - gameRect.top - 20;
+    const appleTop = appleRect.top - gameRect.top;
     const appleWidth = appleRect.width;
     const appleHeight = appleRect.height;
-    const startY = appleTop;
-    const endY = appleTop + appleHeight;
+    const startY = appleTop + appleHeight * 0.2; // Start 20% from top
+    const endY = appleTop + appleHeight * 0.8; // End 80% from top
 
     return (
       <>
@@ -447,11 +449,11 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
               key={`completed-${line.id}`}
               className="absolute z-30 bg-green-500 rounded-full pointer-events-none"
               style={{
-                left: lineX - 15,
+                left: lineX - 2,
                 top: startY,
-                width: "4px",
+                width: "3px",
                 height: endY - startY,
-                boxShadow: "0 0 8px rgba(34, 197, 94, 0.6)",
+                boxShadow: "0 0 6px rgba(34, 197, 94, 0.6)",
               }}
             />
           );
@@ -475,11 +477,11 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
               key={`progress-${line.id}`}
               className="absolute z-30 bg-yellow-500 rounded-full pointer-events-none animate-pulse"
               style={{
-                left: lineX - 15,
+                left: lineX - 2,
                 top: startY,
-                width: "4px",
+                width: "3px",
                 height: progressHeight,
-                boxShadow: "0 0 8px rgba(245, 158, 11, 0.8)",
+                boxShadow: "0 0 6px rgba(245, 158, 11, 0.8)",
               }}
             />
           );
@@ -494,7 +496,7 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
             <path
               d={`M ${touchPath.map((p) => `${p.x},${p.y}`).join(" L ")}`}
               stroke="#ef4444"
-              strokeWidth="5"
+              strokeWidth="3"
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -511,214 +513,26 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
     onNextLevel();
   };
 
-  if (showInstructions) {
-    return (
-      <div
-        className="relative min-h-screen overflow-hidden bg-center bg-cover"
-        style={{ backgroundImage: "url(/images/bg-level.png)" }}
-      >
-        {/* Background overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-50"></div>
-
-        {/* Background trees */}
-        <div className="absolute inset-0">
-          <div className="absolute w-8 h-12 rounded-full left-4 top-20 bg-amber-700"></div>
-          <div className="absolute w-12 h-16 bg-green-600 rounded-full left-2 top-16"></div>
-          <div className="absolute w-6 h-10 rounded-full right-8 top-24 bg-amber-600"></div>
-          <div className="absolute w-10 bg-green-500 rounded-full right-6 top-20 h-14"></div>
-        </div>
-
-        {/* Top Navigation */}
-        <div className="absolute z-20 flex items-center justify-between top-4 left-4 right-4">
-          <button
-            onClick={() => onNavigate("menu")}
-            className="flex items-center justify-center w-12 h-12 bg-yellow-400 rounded-full shadow-lg hover:bg-yellow-500"
-          >
-            <Home className="w-6 h-6 text-amber-800" />
-          </button>
-          <button
-            onClick={onSoundToggle}
-            className="flex items-center justify-center w-12 h-12 bg-yellow-400 rounded-full shadow-lg hover:bg-yellow-500"
-          >
-            {soundEnabled ? (
-              <Volume2 className="w-6 h-6 text-amber-800" />
-            ) : (
-              <VolumeX className="w-6 h-6 text-amber-800" />
-            )}
-          </button>
-        </div>
-
-        {/* Instructions Modal */}
-        <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-          <div className="w-full max-w-2xl p-8 mx-4 bg-orange-500 shadow-2xl rounded-3xl">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="px-6 py-2 text-lg font-bold text-white bg-red-500 rounded-full">
-                PETUNJUK
-              </div>
-              <button
-                onClick={startGame}
-                className="flex items-center justify-center w-10 h-10 bg-yellow-400 rounded-full hover:bg-yellow-500"
-              >
-                <X className="w-6 h-6 text-amber-800" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="p-6 mb-6 bg-white rounded-2xl">
-              {/* Visual example */}
-              <div className="flex items-center justify-center mb-4">
-                {/* Apple with cutting line */}
-                <div className="relative">
-                  <div className="relative w-20 h-20 bg-red-500 rounded-full">
-                    {/* Apple stem */}
-                    <div className="absolute w-1 h-3 transform -translate-x-1/2 rounded-full -top-2 left-1/2 bg-amber-700"></div>
-                    {/* Apple leaf */}
-                    <div className="absolute w-4 h-3 transform rotate-45 bg-green-500 rounded-full -top-1 right-6"></div>
-                    {/* Cutting line */}
-                    <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-0.5 h-16 border-l-2 border-dashed border-black"></div>
-                  </div>
-                  {/* Hand gesture */}
-                  <div className="absolute transform -translate-x-1/2 -bottom-8 left-1/2">
-                    <div className="relative w-8 h-10 rounded-full bg-amber-200">
-                      <div className="absolute w-1 h-6 rounded-full top-2 left-1 bg-amber-300"></div>
-                      <div className="absolute w-1 rounded-full top-1 left-3 h-7 bg-amber-300"></div>
-                      <div className="absolute w-1 h-6 rounded-full top-2 left-5 bg-amber-300"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 text-center bg-yellow-100 rounded-xl">
-                <p className="text-lg font-bold text-amber-800">
-                  GERAKAN JARI DARI ATAS KE BAWAH MENGIKUTI GARIS PUTUS-PUTUS
-                </p>
-              </div>
-            </div>
-
-            {/* Start Button */}
-            <div className="mt-6 text-center">
-              <button
-                onClick={startGame}
-                className="px-12 py-4 text-xl font-bold text-white transition-all duration-200 transform bg-orange-600 rounded-full shadow-lg hover:bg-orange-700 hover:scale-105"
-              >
-                MULAI BERMAIN
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (showResults) {
     return (
-      <div
-        className="relative min-h-screen overflow-hidden bg-center bg-cover"
-        style={{ backgroundImage: "url(/images/bg-level.png)" }}
-      >
-        {/* Background overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-
-        {/* Results Modal */}
-        <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-          <div className="w-full max-w-md p-8 mx-4 bg-white border-4 border-orange-500 shadow-2xl rounded-3xl">
-            {/* Header */}
-            <div className="mb-6 text-center">
-              <div className="px-6 py-3 mb-4 text-xl font-bold text-white bg-teal-500 rounded-full">
-                LEVEL 3 COMPLETE
-              </div>
-            </div>
-
-            {/* Stars */}
-            <div className="flex justify-center mb-6">
-              {[1, 2, 3].map((star) => (
-                <div
-                  key={star}
-                  className={`w-16 h-16 mx-2 ${
-                    star <= stars ? "text-yellow-400" : "text-gray-300"
-                  }`}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="w-full h-full"
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </div>
-              ))}
-            </div>
-
-            {/* Message */}
-            <div className="mb-6 text-center">
-              <h2 className="mb-2 text-3xl font-bold text-orange-600">
-                GOOD JOB
-              </h2>
-              <p className="text-lg text-gray-600">
-                Waktu: {Math.round(timeElapsed / 1000)} detik
-              </p>
-              <p className="text-lg text-gray-600">
-                Akurasi: {Math.round(overallAccuracy)}%
-              </p>
-              <p className="text-lg text-gray-600">
-                Keluar garis: {mistakes} kali
-              </p>
-            </div>
-
-            {/* Next Button */}
-            <div className="text-center">
-              <button
-                onClick={handleNextLevel}
-                className="px-12 py-4 text-xl font-bold text-white transition-all duration-200 transform bg-teal-500 rounded-full shadow-lg hover:bg-teal-600 hover:scale-105"
-              >
-                NEXT
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <GameResultModal
+        isOpen={showResults}
+        level={3}
+        stars={stars}
+        timeElapsed={timeElapsed}
+        mistakes={mistakes}
+        onNextLevel={handleNextLevel}
+      />
     );
   }
 
   return (
-    <div
-      className="relative min-h-screen overflow-hidden bg-center bg-cover"
-      style={{ backgroundImage: "url(/images/bg-level.png)" }}
-    >
-      {/* Background trees */}
-      <div className="absolute inset-0">
-        <div className="absolute w-8 h-12 rounded-full left-4 top-20 bg-amber-700"></div>
-        <div className="absolute w-12 h-16 bg-green-600 rounded-full left-2 top-16"></div>
-        <div className="absolute w-6 h-10 rounded-full right-8 top-24 bg-amber-600"></div>
-        <div className="absolute w-10 bg-green-500 rounded-full right-6 top-20 h-14"></div>
-      </div>
-
-      {/* Top Navigation */}
-      <div className="absolute z-20 flex items-center justify-between top-4 left-4 right-4">
-        <button
-          onClick={() => onNavigate("menu")}
-          className="flex items-center justify-center w-12 h-12 bg-yellow-400 rounded-full shadow-lg hover:bg-yellow-500"
-        >
-          <Home className="w-6 h-6 text-amber-800" />
-        </button>
-
-        <div className="px-6 py-2 text-lg font-bold text-orange-600 bg-yellow-100 rounded-full shadow-lg">
-          POTONG BUAH APEL!
-        </div>
-
-        <button
-          onClick={() => setShowInstructions(true)}
-          className="flex items-center justify-center w-12 h-12 bg-yellow-400 rounded-full shadow-lg hover:bg-yellow-500"
-        >
-          <HelpCircle className="w-6 h-6 text-amber-800" />
-        </button>
-      </div>
-
-      {/* Game Area */}
-      <div
-        ref={gameAreaRef}
-        className="absolute inset-0 top-16 md:top-20"
+    <>
+      <BaseGameLayout
+        onNavigate={onNavigate}
+        onShowInstructions={() => setShowInstructions(true)}
+        title="POTONG BUAH APEL!"
+        gameAreaRef={gameAreaRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
@@ -726,96 +540,84 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
-        style={{ touchAction: "none" }}
       >
-        {/* Game Content Container (white card) */}
-        <div className="relative w-[96%] mx-auto h-[calc(100vh-5rem)] md:h-[calc(100vh-6rem)] mt-3 md:mt-4 bg-white rounded-[32px] shadow-lg overflow-hidden">
-          {/* Header pill inside card like mock */}
-          <div className="absolute -translate-x-1/2 top-4 left-1/2">
-            <div className="px-6 py-2 text-lg font-bold tracking-wide text-orange-600 bg-yellow-200 rounded-full md:px-8 md:py-3 md:text-2xl">
-              POTONG BUAH APEL!
-            </div>
-          </div>
+        {/* Knife on the left */}
+        <img
+          src="/images/knife.png"
+          alt="knife"
+          className="absolute w-16 -translate-y-1/2 pointer-events-none select-none left-6 md:left-10 top-1/2 md:w-24"
+          draggable={false}
+        />
 
-          {/* Knife on the left */}
+        {/* Cutting board centered */}
+        <div
+          ref={boardRef}
+          className="absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2"
+        >
           <img
-            src="/images/knife.png"
-            alt="knife"
-            className="absolute w-16 -translate-y-1/2 pointer-events-none select-none left-6 md:left-10 top-1/2 md:w-24"
+            src="/images/tatakan.png"
+            alt="board"
+            className="w-[480px] max-w-[40vw] h-auto select-none"
             draggable={false}
           />
 
-          {/* Cutting board centered */}
+          {/* Apple positioned centered over board */}
           <div
-            ref={boardRef}
+            ref={appleRef}
             className="absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2"
+            style={{ width: "280px", height: "280px" }}
           >
             <img
-              src="/images/tatakan.png"
-              alt="board"
-              className="w-[540px] max-w-[80vw] h-auto select-none"
+              src="/images/fruits/apple.png"
+              alt="apple"
+              className="object-contain w-full h-full pointer-events-none select-none"
               draggable={false}
             />
-
-            {/* Apple positioned centered over board */}
-            <div
-              ref={appleRef}
-              className="absolute -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2"
-              style={{ width: "280px", height: "280px" }}
-            >
-              <img
-                src="/images/fruits/apple.png"
-                alt="apple"
-                className="object-contain w-full h-full pointer-events-none select-none"
-                draggable={false}
-              />
-              {/* Dashed guide lines */}
-              {[0, 1, 2].map((i) => (
-                <div
-                  key={i}
-                  className={`absolute top-0 bottom-0 border-l-4 ${
-                    i === currentLineIndex
-                      ? "border-yellow-600 animate-pulse"
-                      : "border-black"
-                  } border-dashed`}
-                  style={{ left: `${30 + i * 20}%` }}
-                />
-              ))}
-            </div>
-          </div>
-
-          {/* Cut lines visualization */}
-          {renderCutLines()}
-
-          {/* Game Stats */}
-          <div className="absolute p-3 text-sm rounded-lg shadow-lg top-4 right-4 bg-white/80">
-            <div className="space-y-1 font-bold text-gray-700">
-              <div>Waktu: {Math.round((Date.now() - startTime) / 1000)}s</div>
-              <div>
-                Garis: {currentLineIndex + 1}/{cutLines.length}
-              </div>
-              <div>Keluar: {mistakes}</div>
-            </div>
-          </div>
-
-          {/* Progress indicator */}
-          <div className="absolute flex space-x-2 transform -translate-x-1/2 bottom-4 left-1/2">
-            {cutLines.map((line, index) => (
+            {/* Dashed guide lines */}
+            {[0, 1, 2].map((i) => (
               <div
-                key={line.id}
-                className={`w-4 h-4 rounded-full ${
-                  line.isCompleted
-                    ? "bg-green-500"
-                    : index === currentLineIndex
-                    ? "bg-yellow-500 animate-pulse"
-                    : "bg-gray-300"
-                }`}
-              ></div>
+                key={i}
+                className={`absolute top-16 bottom-16 border-l-2 ${
+                  i === currentLineIndex
+                    ? "border-yellow-500 animate-pulse"
+                    : "border-gray-400"
+                } border-dashed opacity-70`}
+                style={{ left: `${28 + i * 22}%` }}
+              />
             ))}
           </div>
         </div>
-      </div>
-    </div>
+
+        {/* Cut lines visualization */}
+        {renderCutLines()}
+
+
+
+        {/* Progress indicator */}
+        <div className="absolute flex space-x-2 transform -translate-x-1/2 bottom-4 left-1/2">
+          {cutLines.map((line, index) => (
+            <div
+              key={line.id}
+              className={`w-4 h-4 rounded-full ${
+                line.isCompleted
+                  ? "bg-green-500"
+                  : index === currentLineIndex
+                  ? "bg-yellow-500 animate-pulse"
+                  : "bg-gray-300"
+              }`}
+            ></div>
+          ))}
+        </div>
+      </BaseGameLayout>
+
+      <InstructionModal
+        isOpen={showInstructions}
+        onClose={startGame}
+        title="PETUNJUK"
+        imageSrc="/images/petunjuk/level3.png"
+        description="GERAKAN JARI DARI ATAS KE BAWAH MENGIKUTI GARIS PUTUS-PUTUS"
+      />
+    </>
   );
 };
 
