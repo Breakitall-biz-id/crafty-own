@@ -214,36 +214,7 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   }, [completed, play, stop]);
 
   // ===== Screens =====
-  if (showResults && !!stars) {
-    const safeStars = stars ?? 0;
-    const safeEndTime = endTime ?? 0;
-    const safeStartTime = startTime ?? 0;
-    const timeElapsed = endTime && startTime ? safeEndTime - safeStartTime : 0;
-
-    return (
-      <GameResultModal
-        isOpen={showResults}
-        level={4}
-        stars={safeStars}
-        timeElapsed={timeElapsed}
-        mistakes={mistakes}
-        accuracy={accuracy}
-        onNextLevel={() => {
-          onLevelComplete(safeStars, timeElapsed / 1000, mistakes);
-          onNextLevel();
-          setShowResults(false);
-          setDrawing(false);
-          setUserPath("");
-          setCompleted(false);
-          setStartTime(null);
-          setEndTime(null);
-          setStars(null);
-          setAccuracy(0);
-          setMistakes(0);
-        }}
-      />
-    );
-  }
+  // (Remove the conditional return for GameResultModal - it will be rendered as overlay)
 
   // ===== Main Canvas =====
   return (
@@ -306,6 +277,29 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
         title="PETUNJUK"
         imageSrc="/images/petunjuk/level4.png"
         description="GERAKAN JARI MENGIKUTI GARIS PUTUS-PUTUS"
+      />
+
+      <GameResultModal
+        isOpen={showResults}
+        level={4}
+        stars={stars ?? 0}
+        timeElapsed={endTime && startTime ? (endTime - startTime) / 1000 : 0}
+        mistakes={mistakes}
+        onNextLevel={() => {
+          const safeStars = stars ?? 0;
+          const timeElapsed = endTime && startTime ? endTime - startTime : 0;
+          onLevelComplete(safeStars, timeElapsed / 1000, mistakes);
+          onNextLevel();
+          setShowResults(false);
+          setDrawing(false);
+          setUserPath("");
+          setCompleted(false);
+          setStartTime(null);
+          setEndTime(null);
+          setStars(null);
+          setAccuracy(0);
+          setMistakes(0);
+        }}
       />
     </>
   );

@@ -513,18 +513,6 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
     onNextLevel();
   };
 
-  if (showResults) {
-    return (
-      <GameResultModal
-        isOpen={showResults}
-        level={3}
-        stars={stars}
-        timeElapsed={timeElapsed}
-        mistakes={mistakes}
-        onNextLevel={handleNextLevel}
-      />
-    );
-  }
 
   return (
     <>
@@ -617,6 +605,19 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
         imageSrc="/images/petunjuk/level3.png"
         description="GERAKAN JARI DARI ATAS KE BAWAH MENGIKUTI GARIS PUTUS-PUTUS"
       />
+
+       {showResults && (
+        <>
+          <GameResultModal
+            isOpen={showResults}
+            level={3}
+            stars={stars}
+            timeElapsed={timeElapsed}
+            mistakes={mistakes}
+            onNextLevel={handleNextLevel}
+          />
+        </>
+      )}
     </>
   );
 };

@@ -537,19 +537,6 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
     );
   };
 
-  if (showResults) {
-    return (
-      <GameResultModal
-        isOpen={showResults}
-        level={2}
-        stars={stars}
-        timeElapsed={timeElapsed}
-        mistakes={mistakes}
-        onNextLevel={handleNextLevel}
-      />
-    );
-  }
-
   return (
     <>
       <BaseGameLayout
@@ -591,6 +578,19 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
         imageSrc="/images/petunjuk/level2.png"
         description="LETAKKAN BUAH SESUAI DENGAN BAYANGANNYA"
       />
+
+      {showResults && (
+        <>
+          <GameResultModal
+            isOpen={showResults}
+            level={2}
+            stars={stars}
+            timeElapsed={timeElapsed}
+            mistakes={mistakes}
+            onNextLevel={handleNextLevel}
+          />
+        </>
+      )}
     </>
   );
 };
