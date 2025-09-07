@@ -2,6 +2,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { useSound } from "../hooks/useSound";
 import { Screen } from "../types/GameTypes";
+import ResultsModal from "./ResultsModal";
 
 
 interface GameLevel4Props {
@@ -176,68 +177,27 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   if (showResults && !!stars) {
     // TypeScript: stars, endTime, startTime dijamin number di sini
     const safeStars = stars ?? 0;
-    const safeEndTime = endTime ?? 0;
-    const safeStartTime = startTime ?? 0;
+    const handleNextLevelClick = () => {
+      const safeEndTime = endTime ?? 0;
+      const safeStartTime = startTime ?? 0;
+      onLevelComplete(safeStars, endTime && startTime ? (safeEndTime - safeStartTime) / 1000 : 0, 0);
+      onNextLevel();
+      // Reset state agar modal hilang dan siap main lagi
+      setShowResults(false);
+      setDrawing(false);
+      setUserPath("");
+      setCompleted(false);
+      setStartTime(null);
+      setEndTime(null);
+      setStars(null);
+    };
+
     return (
-      <div className="relative min-h-screen overflow-hidden bg-center bg-cover flex items-center justify-center" style={{ backgroundImage: "url(/images/bg-level.png)" }}>
-        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-        <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-          <div className="w-full max-w-md p-8 mx-4 bg-white border-4 border-orange-500 shadow-2xl rounded-3xl animate-slide-in">
-            {/* Header */}
-            <div className="mb-6 text-center">
-              <div className="px-6 py-3 mb-4 text-xl font-bold text-white bg-teal-500 rounded-full">
-                LEVEL 4 COMPLETE
-              </div>
-            </div>
-            {/* Stars */}
-            <div className="flex justify-center mb-6">
-              {[1, 2, 3].map((star) => (
-                <div
-                  key={star}
-                  className={`w-16 h-16 mx-2 ${star <= safeStars ? "text-yellow-400" : "text-gray-300"}`}
-                >
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </div>
-              ))}
-            </div>
-            {/* Message */}
-            <div className="mb-6 text-center">
-              <h2 className="mb-2 text-3xl font-bold text-orange-600">GOOD JOB</h2>
-              <p className="text-lg text-gray-600">
-                Waktu: {endTime && startTime ? Math.round((safeEndTime - safeStartTime) / 1000) : '-'} detik
-              </p>
-              <p className="text-lg text-gray-600">
-                Akurasi: {userPath ? Math.min(100, (estimatePathLength(userPath) / estimatePathLength(combinedPath) * 100)).toFixed(0) : '-'}%
-              </p>
-              <p className="text-lg text-gray-600">
-                Kesalahan: 0
-              </p>
-            </div>
-            {/* Next Button */}
-            <div className="text-center">
-              <button
-                onClick={() => {
-                  onLevelComplete(safeStars, endTime && startTime ? (safeEndTime - safeStartTime) / 1000 : 0, 0);
-                  onNextLevel();
-                  // Reset state agar modal hilang dan siap main lagi
-                  setShowResults(false);
-                  setDrawing(false);
-                  setUserPath("");
-                  setCompleted(false);
-                  setStartTime(null);
-                  setEndTime(null);
-                  setStars(null);
-                }}
-                className="px-8 py-3 mt-2 text-lg font-bold text-white bg-teal-500 rounded-full shadow hover:bg-teal-600 transition"
-              >
-                NEXT
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ResultsModal
+        level={4}
+        stars={safeStars}
+        onNextLevel={handleNextLevelClick}
+      />
     );
   }
 

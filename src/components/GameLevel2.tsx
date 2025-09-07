@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useSound } from "../hooks/useSound";
 import { Home, HelpCircle, Volume2, VolumeX, X } from "lucide-react";
 import { Screen } from "../types/GameTypes";
+import ResultsModal from "./ResultsModal";
 
 interface GameLevel2Props {
   onNavigate: (screen: Screen) => void;
@@ -285,12 +286,12 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
             prev.map((f) =>
               f.id === draggedFruit
                 ? {
-                    ...f,
-                    isDragging: false,
-                    isMatched: true,
-                    x: shadowAbsoluteX,
-                    y: shadowAbsoluteY,
-                  }
+                  ...f,
+                  isDragging: false,
+                  isMatched: true,
+                  x: shadowAbsoluteX,
+                  y: shadowAbsoluteY,
+                }
                 : f
             )
           );
@@ -314,24 +315,24 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
             ];
             const half = 40;
             const originalPositions: Record<string, { x: number; y: number }> =
-              {
-                pineapple: {
-                  x: cols[0] - gameAreaRect.left - half,
-                  y: rows[0] - gameAreaRect.top - half,
-                },
-                watermelon: {
-                  x: cols[1] - gameAreaRect.left - half,
-                  y: rows[0] - gameAreaRect.top - half,
-                },
-                grapes: {
-                  x: cols[0] - gameAreaRect.left - half,
-                  y: rows[1] - gameAreaRect.top - half,
-                },
-                apple: {
-                  x: cols[1] - gameAreaRect.left - half,
-                  y: rows[1] - gameAreaRect.top - half,
-                },
-              };
+            {
+              pineapple: {
+                x: cols[0] - gameAreaRect.left - half,
+                y: rows[0] - gameAreaRect.top - half,
+              },
+              watermelon: {
+                x: cols[1] - gameAreaRect.left - half,
+                y: rows[0] - gameAreaRect.top - half,
+              },
+              grapes: {
+                x: cols[0] - gameAreaRect.left - half,
+                y: rows[1] - gameAreaRect.top - half,
+              },
+              apple: {
+                x: cols[1] - gameAreaRect.left - half,
+                y: rows[1] - gameAreaRect.top - half,
+              },
+            };
             setFruits((prev) =>
               prev.map((f) =>
                 f.id === draggedFruit
@@ -450,9 +451,8 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
     return (
       <div
         key={fruit.id}
-        className={`absolute w-20 h-20 cursor-pointer transform transition-transform ${
-          fruit.isDragging ? "scale-110 z-20" : "hover:scale-105 z-10"
-        } ${fruit.isMatched ? "cursor-default opacity-80" : ""}`}
+        className={`absolute w-20 h-20 cursor-pointer transform transition-transform ${fruit.isDragging ? "scale-110 z-20" : "hover:scale-105 z-10"
+          } ${fruit.isMatched ? "cursor-default opacity-80" : ""}`}
         style={{
           left: fruit.x - 20,
           top: fruit.y,
@@ -569,9 +569,8 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
                       {[...Array(5)].map((_, i) => (
                         <div
                           key={i}
-                          className={`w-2 h-6 bg-green-500 rounded-t-full transform ${
-                            i === 0 ? "-rotate-12" : i === 4 ? "rotate-12" : ""
-                          }`}
+                          className={`w-2 h-6 bg-green-500 rounded-t-full transform ${i === 0 ? "-rotate-12" : i === 4 ? "rotate-12" : ""
+                            }`}
                         ></div>
                       ))}
                     </div>
@@ -596,9 +595,8 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
                       {[...Array(5)].map((_, i) => (
                         <div
                           key={i}
-                          className={`w-2 h-6 bg-gray-800 rounded-t-full transform ${
-                            i === 0 ? "-rotate-12" : i === 4 ? "rotate-12" : ""
-                          }`}
+                          className={`w-2 h-6 bg-gray-800 rounded-t-full transform ${i === 0 ? "-rotate-12" : i === 4 ? "rotate-12" : ""
+                            }`}
                         ></div>
                       ))}
                     </div>
@@ -630,66 +628,11 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
 
   if (showResults) {
     return (
-      <div
-        className="relative min-h-screen overflow-hidden bg-center bg-cover"
-        style={{ backgroundImage: "url(/images/bg-level.png)" }}
-      >
-        {/* Background overlay */}
-        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-
-        {/* Results Modal */}
-        <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-          <div className="w-full max-w-md p-8 mx-4 bg-white border-4 border-orange-500 shadow-2xl rounded-3xl">
-            {/* Header */}
-            <div className="mb-6 text-center">
-              <div className="px-6 py-3 mb-4 text-xl font-bold text-white bg-teal-500 rounded-full">
-                LEVEL 2 COMPLETE
-              </div>
-            </div>
-
-            {/* Stars */}
-            <div className="flex justify-center mb-6">
-              {[1, 2, 3].map((star) => (
-                <div
-                  key={star}
-                  className={`w-16 h-16 mx-2 ${
-                    star <= stars ? "text-yellow-400" : "text-gray-300"
-                  }`}
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                    className="w-full h-full"
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                </div>
-              ))}
-            </div>
-
-            {/* Message */}
-            <div className="mb-6 text-center">
-              <h2 className="mb-2 text-3xl font-bold text-orange-600">
-                GOOD JOB
-              </h2>
-              <p className="text-lg text-gray-600">
-                Waktu: {Math.round(timeElapsed / 1000)} detik
-              </p>
-              <p className="text-lg text-gray-600">Kesalahan: {mistakes}</p>
-            </div>
-
-            {/* Next Button */}
-            <div className="text-center">
-              <button
-                onClick={handleNextLevel}
-                className="px-12 py-4 text-xl font-bold text-white transition-all duration-200 transform bg-teal-500 rounded-full shadow-lg hover:bg-teal-600 hover:scale-105"
-              >
-                NEXT
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <ResultsModal
+        level={2}
+        stars={stars}
+        onNextLevel={handleNextLevel}
+      />
     );
   }
 
@@ -719,7 +662,7 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
         </button>
       </div>
 
-     
+
 
       {/* Game Area */}
       <div

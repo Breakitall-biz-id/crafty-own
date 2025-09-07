@@ -3,6 +3,7 @@ import { useSound } from "../hooks/useSound";
 import { Screen } from "../types/GameTypes";
 import { Home, Lightbulb, Volume2, VolumeX, X } from "lucide-react";
 import { motion } from "framer-motion";
+import ResultsModal from "./ResultsModal";
 
 interface GameLevel5Props {
     onNavigate: (screen: Screen) => void;
@@ -145,14 +146,14 @@ const GameLevel5: React.FC<GameLevel5Props> = ({
     useEffect(() => {
         const handleGlobalPointerMove = (e: PointerEvent) => {
             if (!drawing || tool !== "pencil" || !svgRef.current) return;
-            
+
             const svg = svgRef.current;
             const rect = svg.getBoundingClientRect();
             const scaleX = 400 / rect.width;
             const scaleY = 260 / rect.height;
             const x = (e.clientX - rect.left) * scaleX;
             const y = (e.clientY - rect.top) * scaleY;
-            
+
             setFreePencilPath(prev => prev + ` L${x},${y}`);
         };
 
@@ -284,31 +285,11 @@ const GameLevel5: React.FC<GameLevel5Props> = ({
     // --- Modal Hasil ---
     if (showResults) {
         return (
-            <div className="relative min-h-screen overflow-hidden bg-center bg-cover" style={{ backgroundImage: "url(/images/bg-level.png)" }}>
-                <div className="absolute inset-0 bg-black bg-opacity-30"></div>
-                <div className="relative z-10 flex items-center justify-center min-h-screen px-4">
-                    <div className="w-full max-w-md p-8 mx-4 bg-white border-4 border-orange-500 shadow-2xl rounded-3xl">
-                        <div className="mb-6 text-center">
-                            <div className="px-6 py-3 mb-4 text-xl font-bold text-white bg-teal-500 rounded-full">LEVEL 5 COMPLETE</div>
-                        </div>
-                        <div className="flex justify-center mb-6">
-                            {[1, 2, 3].map((star) => (
-                                <div key={star} className={`w-16 h-16 mx-2 ${star <= stars ? "text-yellow-400" : "text-gray-300"}`}>
-                                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-full h-full">
-                                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                                    </svg>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="mb-6 text-center">
-                            <h2 className="mb-2 text-3xl font-bold text-orange-600">GOOD JOB</h2>
-                        </div>
-                        <div className="text-center">
-                            <button onClick={handleNextLevel} className="px-12 py-4 text-xl font-bold text-white transition-all duration-200 transform bg-teal-500 rounded-full shadow-lg hover:bg-teal-600 hover:scale-105">NEXT</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <ResultsModal
+                level={5}
+                stars={stars}
+                onNextLevel={handleNextLevel}
+            />
         );
     }
 
