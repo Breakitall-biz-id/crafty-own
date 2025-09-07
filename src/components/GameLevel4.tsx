@@ -35,7 +35,7 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   onSoundToggle,
   playerName,
 }) => {
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [drawing, setDrawing] = useState(false);
   const [userPath, setUserPath] = useState<string>("");
   const [completed, setCompleted] = useState(false);
