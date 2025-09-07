@@ -11,10 +11,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onStart }) => {
       style={{ backgroundImage: "url(/images/first-page.png)" }}
     >
       {/* Content Container - hanya tombol mulai di tengah */}
-      <div className="relative z-10 flex items-center justify-center mt-40">
+      <div className="relative z-10 flex items-center justify-center mt-64">
         <button
           onClick={onStart}
-          className="px-12 py-4 mt-10 text-xl font-bold text-white transition-all duration-200 transform bg-orange-500 border-4 border-white rounded-full shadow-lg hover:bg-orange-600 hover:scale-105 active:scale-95"
+          className="px-10 py-2 mt-10 font-bold text-white transition-all duration-200 transform bg-orange-500 border-4 border-white rounded-full shadow-lg text-md hover:bg-orange-600 hover:scale-105 active:scale-95"
         >
           MULAI
         </button>
