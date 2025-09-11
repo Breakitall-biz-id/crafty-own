@@ -1,6 +1,7 @@
 import React, { useRef, useState } from "react";
 import html2canvas from "html2canvas";
 import { Screen } from "../types/GameTypes";
+import { div } from "framer-motion/client";
 
 interface ResultScreenProps {
   playerName: string;
@@ -111,12 +112,17 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
             )}
           </div>
           {/* Tombol download di pojok kanan bawah kotak utama */}
-          <img
+          {!isDownloading && (
+            <>
+            <img
             src="/images/download.png"
             alt="Download"
             className="absolute z-20 w-16 h-16 transition cursor-pointer right-4 bottom-4 hover:scale-110"
             onClick={handleDownload}
           />
+            </>
+          )}
+          
         </div>
       </div>
     </div>

@@ -327,9 +327,9 @@ export default function GameLevel5({
               {/* === Garis lipatan (non-interaktif) === */}
               <g
                 id="lipatan"
-                stroke="#6B7280"
+                stroke="#46474B"
                 strokeWidth={1}
-                strokeDasharray="2 2"
+                strokeDasharray="4 4"
                 pointerEvents="none"
               >
                 <path d="M35 137.5L43 132" />
