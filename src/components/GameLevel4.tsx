@@ -83,18 +83,18 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
 
   // Fungsi untuk mendeteksi apakah titik berada dekat dengan path target
   function isPointNearPath(x: number, y: number): boolean {
-    // Simplified: check if point is within apple area bounds
-    return x >= 20 && x <= 194 && y >= 0 && y <= 231;
+    // Check if point is within apple area bounds (sesuai viewBox "10 0 194 231")
+    return x >= 10 && x <= 204 && y >= 0 && y <= 231;
   }
 
-  // Fungsi untuk menghitung kesalahan berdasarkan drawing user
-  function calculateMistakes(userPath: string): number {
-    if (!userPath) return 0;
+  // Fungsi untuk menghitung persentase titik yang berada di luar area target
+  function calculateOutOfBoundsPercentage(userPath: string): number {
+    if (!userPath) return 100; // Jika tidak ada gambar, 100% salah
 
     const commands = userPath.match(/[ML][^ML]*/g);
-    if (!commands) return 0;
+    if (!commands) return 100;
 
-    let mistakeCount = 0;
+    let outOfBoundsCount = 0;
     let totalPoints = 0;
 
     for (const cmd of commands) {
@@ -110,15 +110,17 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
         const [x, y] = nums;
         totalPoints++;
 
-        // Check if point is too far from target path
+        // Check if point is outside target area
         if (!isPointNearPath(x, y)) {
-          mistakeCount++;
+          outOfBoundsCount++;
         }
       }
     }
 
-    // Return percentage of mistakes (out of 100)
-    return totalPoints > 0 ? Math.round((mistakeCount / totalPoints) * 100) : 0;
+    // Return percentage of out-of-bounds points
+    return totalPoints > 0
+      ? Math.round((outOfBoundsCount / totalPoints) * 100)
+      : 100;
   }
 
   function getSvgCoords(e: React.PointerEvent) {
@@ -179,25 +181,44 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
 
   const handleFinishDrawing = () => {
     if (completed || !userPath) return;
-    const finishTime = endTime ?? Date.now();
-    const timeElapsed = startTime ? (finishTime - startTime) / 1000 : 0;
+
+    // Set end time saat tombol selesai ditekan
+    const finishTime = Date.now();
+    setEndTime(finishTime);
+
+    const timeElapsedMs = startTime ? finishTime - startTime : 0;
+    const timeElapsedSeconds = timeElapsedMs / 1000;
+
     const userLength = estimatePathLength(userPath);
     const combinedLength = estimatePathLength(combinedPath);
-    const calculatedAccuracy =
-      combinedLength > 0 ? Math.min(1, userLength / combinedLength) : 0;
 
-    // Hitung kesalahan dan akurasi
-    const calculatedMistakes = calculateMistakes(userPath);
-    const accuracyPercentage = Math.round(calculatedAccuracy * 100);
+    // Hitung akurasi berdasarkan panjang path
+    let pathAccuracy = 0;
+    if (combinedLength > 0 && userLength > 0) {
+      const lengthRatio =
+        Math.min(userLength, combinedLength) /
+        Math.max(userLength, combinedLength);
+      pathAccuracy = lengthRatio;
+    }
+
+    // Hitung persentase titik yang keluar area target
+    const outOfBoundsPercentage = calculateOutOfBoundsPercentage(userPath);
+
+    // Akurasi area = 100% - persentase yang keluar area
+    const areaAccuracy = (100 - outOfBoundsPercentage) / 100;
+
+    // Akurasi total = rata-rata dari akurasi path dan akurasi area
+    const totalAccuracy = (pathAccuracy + areaAccuracy) / 2;
+    const accuracyPercentage = Math.round(totalAccuracy * 100);
 
     // Set state untuk ditampilkan di result
     setAccuracy(accuracyPercentage);
-    setMistakes(calculatedMistakes);
+    setMistakes(outOfBoundsPercentage); // mistakes = persentase keluar area
 
     let bintang = 1;
-    if (calculatedAccuracy >= 0.9 && timeElapsed >= 15 && timeElapsed <= 20) {
+    if (accuracyPercentage >= 80 && timeElapsedSeconds <= 30) {
       bintang = 3;
-    } else if (calculatedAccuracy >= 0.7 && timeElapsed <= 30) {
+    } else if (accuracyPercentage >= 60 && timeElapsedSeconds <= 60) {
       bintang = 2;
     }
 
@@ -213,10 +234,7 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     return () => clearTimeout(t);
   }, [completed, play, stop]);
 
-  // ===== Screens =====
-  // (Remove the conditional return for GameResultModal - it will be rendered as overlay)
 
-  // ===== Main Canvas =====
   return (
     <>
       <BaseGameLayout
@@ -225,10 +243,10 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
         title="GAMBAR BUAH APEL!"
       >
         {/* Drawing area */}
-        <div className="flex items-center justify-center flex-1 w-full h-full px-6 pt-8 pb-16">
+        <div className="flex items-center justify-center flex-1 w-full h-full px-2 pt-2 pb-8">
           <svg
             ref={svgRef}
-            viewBox="0 0 214 231"
+            viewBox="10 0 194 231"
             preserveAspectRatio="xMidYMid meet"
             className="w-full h-full touch-none"
             style={{
@@ -262,12 +280,13 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
           </svg>
         </div>
 
-        {/* Finish button */}
+        {/* Finish button - positioned on the right side */}
         <button
           onClick={handleFinishDrawing}
-          className="absolute px-8 py-2 font-bold text-white transition -translate-x-1/2 bg-orange-500 rounded-full shadow bottom-1 text-md left-1/2 hover:bg-orange-600"
+          className="absolute flex items-center justify-center w-12 h-12 text-xl text-white transition-all -translate-y-1/2 bg-green-500 rounded-full shadow-lg hover:bg-green-600 right-4 top-1/2"
+          title="Selesai"
         >
-          SELESAI
+          ✓
         </button>
       </BaseGameLayout>
 
@@ -287,8 +306,8 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
         mistakes={mistakes}
         onNextLevel={() => {
           const safeStars = stars ?? 0;
-          const timeElapsed = endTime && startTime ? endTime - startTime : 0;
-          onLevelComplete(safeStars, timeElapsed / 1000, mistakes);
+          const timeElapsedMs = endTime && startTime ? endTime - startTime : 0;
+          onLevelComplete(safeStars, timeElapsedMs / 1000, mistakes);
           onNextLevel();
           setShowResults(false);
           setDrawing(false);

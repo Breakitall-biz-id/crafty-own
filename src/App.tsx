@@ -54,7 +54,7 @@ function App() {
       // Reset completedLevels and results if ingin main baru
       completedLevels: [],
     });
-    localStorage.removeItem('crafty-own-results');
+    localStorage.removeItem("crafty-own-results");
     navigateTo("level1");
   };
 
@@ -65,18 +65,19 @@ function App() {
   const handleLevelComplete = (
     stars: number,
     timeElapsed: number,
-    mistakes: number
+    mistakes: number,
+    completedArtwork?: string
   ) => {
     const currentLevel =
       currentScreen === "level1"
         ? 1
         : currentScreen === "level2"
-          ? 2
-          : currentScreen === "level3"
-            ? 3
-            : currentScreen === "level4"
-              ? 4
-              : 5;
+        ? 2
+        : currentScreen === "level3"
+        ? 3
+        : currentScreen === "level4"
+        ? 4
+        : 5;
 
     // Save level completion
     if (!gameState.completedLevels.includes(currentLevel)) {
@@ -86,17 +87,20 @@ function App() {
       });
     }
 
-    // Save game result
+    // Save game result with artwork if provided
     const result = {
       level: currentLevel,
       stars,
       timeElapsed,
       mistakes,
       completed: true,
+      ...(completedArtwork && { artwork: completedArtwork }),
     };
     // Simpan ke localStorage
     if (window && window.localStorage) {
-      const results = JSON.parse(localStorage.getItem('crafty-own-results') || '[]');
+      const results = JSON.parse(
+        localStorage.getItem("crafty-own-results") || "[]"
+      );
       // replace if already exists for this level
       const idx = results.findIndex((r: any) => r.level === currentLevel);
       if (idx !== -1) {
@@ -104,7 +108,7 @@ function App() {
       } else {
         results.push(result);
       }
-      localStorage.setItem('crafty-own-results', JSON.stringify(results));
+      localStorage.setItem("crafty-own-results", JSON.stringify(results));
     }
   };
 
@@ -113,12 +117,12 @@ function App() {
       currentScreen === "level1"
         ? 1
         : currentScreen === "level2"
-          ? 2
-          : currentScreen === "level3"
-            ? 3
-            : currentScreen === "level4"
-              ? 4
-              : 5;
+        ? 2
+        : currentScreen === "level3"
+        ? 3
+        : currentScreen === "level4"
+        ? 4
+        : 5;
 
     // Navigate to next level or result screen
     if (currentLevel === 1) {
@@ -201,18 +205,43 @@ function App() {
             onNextLevel={handleNextLevel}
             soundEnabled={gameState.soundEnabled}
             onSoundToggle={handleSoundToggle}
+            setScreen={navigateTo}
             playerName={gameState.playerName}
           />
         );
-      case "result":
+      case "result": {
         // Hitung total bintang dari localStorage
         let totalStars = 0;
-        let playerName = gameState.playerName;
-        if (typeof window !== 'undefined') {
-          const results = JSON.parse(localStorage.getItem('crafty-own-results') || '[]');
-          totalStars = results.reduce((sum: number, r: any) => sum + (r.stars || 0), 0);
+        let level5Artwork: string | undefined;
+        const playerName = gameState.playerName;
+
+        if (typeof window !== "undefined") {
+          const results = JSON.parse(
+            localStorage.getItem("crafty-own-results") || "[]"
+          );
+          totalStars = results.reduce(
+            (sum: number, r: { stars?: number }) => sum + (r.stars || 0),
+            0
+          );
+
+          // Cari artwork dari level 5
+          const level5Result = results.find(
+            (r: { level: number; artwork?: string }) => r.level === 5
+          );
+          if (level5Result && level5Result.artwork) {
+            level5Artwork = level5Result.artwork;
+          }
         }
-        return <ResultScreen playerName={playerName} totalStars={totalStars} onNavigate={navigateTo} />;
+
+        return (
+          <ResultScreen
+            playerName={playerName}
+            totalStars={totalStars}
+            onNavigate={navigateTo}
+            level5Artwork={level5Artwork}
+          />
+        );
+      }
       default:
         return <SplashScreen onStart={() => navigateTo("menu")} />;
     }
