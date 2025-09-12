@@ -113,34 +113,62 @@ export default function GameLevel5({
   };
 
   // Coretan bebas
-  const handleCanvasMouseDown = (e: React.MouseEvent) => {
+  // Helper function untuk mendapatkan koordinat dari pointer event
+  const getCoordinates = (e: React.PointerEvent) => {
+    const svg = svgRef.current;
+    if (!svg) return { x: 0, y: 0 };
+
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+
+    const screenCTM = svg.getScreenCTM();
+    if (!screenCTM) return { x: 0, y: 0 };
+
+    const svgPoint = pt.matrixTransform(screenCTM.inverse());
+
+    return { x: svgPoint.x, y: svgPoint.y };
+  };
+
+  const handleCanvasPointerDown = (e: React.PointerEvent) => {
     if (activeTool !== "draw") return;
+
     const svg = svgRef.current;
     if (!svg) return;
-    const rect = svg.getBoundingClientRect();
-    // Konversi koordinat mouse ke koordinat SVG viewBox (0 0 437 324)
-    const x = ((e.clientX - rect.left) / rect.width) * 437;
-    const y = ((e.clientY - rect.top) / rect.height) * 324;
+
+    // Capture pointer untuk memastikan events tetap diterima
+    svg.setPointerCapture(e.pointerId);
+
+    const { x, y } = getCoordinates(e);
     setIsDrawing(true);
     setCurrentPath(`M ${x} ${y}`);
-    setCurrentPathColor(activeColor); // Simpan warna saat mulai menggambar
+    setCurrentPathColor(activeColor);
     setLastPoint({ x, y });
+
+    // Prevent default untuk mencegah scrolling
+    e.preventDefault();
   };
-  const handleCanvasMouseMove = (e: React.MouseEvent) => {
+
+  const handleCanvasPointerMove = (e: React.PointerEvent) => {
     if (!isDrawing || activeTool !== "draw") return;
-    const svg = svgRef.current;
-    if (!svg) return;
-    const rect = svg.getBoundingClientRect();
-    // Konversi koordinat mouse ke koordinat SVG viewBox (0 0 437 324)
-    const x = ((e.clientX - rect.left) / rect.width) * 437;
-    const y = ((e.clientY - rect.top) / rect.height) * 324;
+
+    const { x, y } = getCoordinates(e);
     if (lastPoint) {
       setCurrentPath((prev) => prev + ` L ${x} ${y}`);
       setLastPoint({ x, y });
     }
+
+    e.preventDefault();
   };
-  const handleCanvasMouseUp = () => {
+
+  const handleCanvasPointerUp = (e: React.PointerEvent) => {
     if (!isDrawing) return;
+
+    const svg = svgRef.current;
+    if (svg) {
+      svg.releasePointerCapture(e.pointerId);
+    }
+
     setIsDrawing(false);
     if (activeTool === "draw" && currentPath) {
       setDrawingPaths((prev) => [
@@ -231,12 +259,13 @@ export default function GameLevel5({
               className="
                 w-full h-auto 
                 max-w-[80vw] max-h-[50vh] 
-                bg-white rounded-lg shadow-lg select-none
+                bg-white rounded-lg shadow-lg select-none touch-none
               "
-              onMouseDown={handleCanvasMouseDown}
-              onMouseMove={handleCanvasMouseMove}
-              onMouseUp={handleCanvasMouseUp}
-              onMouseLeave={() => setIsDrawing(false)}
+              onPointerDown={handleCanvasPointerDown}
+              onPointerMove={handleCanvasPointerMove}
+              onPointerUp={handleCanvasPointerUp}
+              onPointerLeave={() => setIsDrawing(false)}
+              style={{ touchAction: "none" }}
             >
               {/* === Bidang bisa diwarnai === */}
               <g id="faces" stroke="#333" strokeWidth={1.5} fillRule="evenodd">
