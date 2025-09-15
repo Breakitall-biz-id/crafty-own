@@ -93,14 +93,8 @@ export default function GameLevel5({
 
   useEffect(() => {
     if (!gameStarted || gameCompleted) return;
-    const allFilled = paintableIds.every(
-      (id) => fills[id] && fills[id] !== "transparent"
-    );
-    if (allFilled) {
-      setGameCompleted(true);
-      if (soundEnabled) sound.play("success");
-      setTimeout(() => setShowResults(true), 800);
-    }
+
+
   }, [fills, gameStarted, gameCompleted, soundEnabled, sound, paintableIds]);
 
   const paint = (id: string) => {
