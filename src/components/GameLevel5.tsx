@@ -75,8 +75,24 @@ export default function GameLevel5({
 
     // Clone SVG untuk export
     const clonedSvg = svg.cloneNode(true) as SVGSVGElement;
-    clonedSvg.setAttribute("width", "400");
-    clonedSvg.setAttribute("height", "400");
+    clonedSvg.removeAttribute("style");
+    clonedSvg.style.background = "none";
+    clonedSvg.style.border = "none";
+    clonedSvg.style.boxShadow = "none";
+
+    const rects = clonedSvg.querySelectorAll("rect");
+
+    rects.forEach(rect => {
+      if (
+        rect.getAttribute("x") === "0" &&
+        rect.getAttribute("y") === "0" &&
+        rect.getAttribute("width") === clonedSvg.getAttribute("width") &&
+        rect.getAttribute("height") === clonedSvg.getAttribute("height")
+      ) {
+        rect.parentNode?.removeChild(rect);
+      }
+    });
+
 
     return new XMLSerializer().serializeToString(clonedSvg);
   };
@@ -136,7 +152,7 @@ export default function GameLevel5({
     const { x, y } = getCoordinates(e);
     setIsDrawing(true);
     setCurrentPath(`M ${x} ${y}`);
-    setCurrentPathColor(activeColor);
+    setCurrentPathColor('#222');
     setLastPoint({ x, y });
 
     // Prevent default untuk mencegah scrolling

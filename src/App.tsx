@@ -224,7 +224,6 @@ function App() {
             0
           );
 
-          // Cari artwork dari level 5
           const level5Result = results.find(
             (r: { level: number; artwork?: string }) => r.level === 5
           );
