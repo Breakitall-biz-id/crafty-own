@@ -218,7 +218,7 @@ export default function GameLevel5({
           {/* Toolbox */}
           <div className="flex flex-col items-center justify-center p-2 bg-yellow-200 shadow-lg rounded-xl mr-3 min-w-[60px]">
             <div className="flex flex-col items-center gap-2">
-              {["#dc2626", "#16a34a", "#92400e"].map((color) => (
+              {["#dc2626", "#16a34a", "#92400e", "#eab308"].map((color) => (
                 <button
                   key={color}
                   onClick={() => {

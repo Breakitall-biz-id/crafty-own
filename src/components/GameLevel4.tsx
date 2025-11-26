@@ -35,7 +35,8 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   onSoundToggle,
   playerName,
 }) => {
-  const [showInstructions, setShowInstructions] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(true);
+  const [gameStarted, setGameStarted] = useState(false);
   const [drawing, setDrawing] = useState(false);
   const [userPath, setUserPath] = useState<string>("");
   const [completed, setCompleted] = useState(false);
@@ -48,6 +49,14 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
 
   const svgRef = useRef<SVGSVGElement>(null);
   const { play, stop, unlock } = useSound(soundEnabled);
+
+  const handleStart = () => {
+    setGameStarted(true);
+    setShowInstructions(false);
+    if (soundEnabled) {
+      play("start");
+    }
+  };
 
   // ===== Helpers =====
   function estimatePathLength(path: string): number {
@@ -155,12 +164,10 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     setEndTime(null);
     setStars(null);
     setShowResults(false);
-    setAccuracy(0);
-    setMistakes(0);
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    if (completed || showInstructions) return;
+    if (completed || showInstructions || !gameStarted) return;
     setDrawing(true);
     if (!startTime) setStartTime(Date.now());
     const { x, y } = getSvgCoords(e);
@@ -320,6 +327,16 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
           setMistakes(0);
         }}
       />
+
+      {showInstructions && (
+        <InstructionModal
+          isOpen={showInstructions}
+          onClose={handleStart}
+          title="Level 4: Ikuti Garis Apel"
+          imageSrc="/images/petunjuk/level4.png"
+          description="Ikuti garis bentuk apel dengan tepat. Semakin akurat, semakin banyak bintang yang kamu dapatkan!"
+        />
+      )}
     </>
   );
 };
