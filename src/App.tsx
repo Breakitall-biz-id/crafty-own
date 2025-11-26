@@ -143,7 +143,7 @@ function App() {
       case "splash":
         return <SplashScreen onStart={() => navigateTo("menu")} />;
       case "menu":
-        return <MenuScreen onNavigate={navigateTo} />;
+        return <MenuScreen onNavigate={navigateTo} soundEnabled={gameState.soundEnabled} />;
       case "nameInput":
         return (
           <NameInputScreen

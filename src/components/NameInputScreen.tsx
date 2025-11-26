@@ -75,18 +75,7 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
         </button>
       </div>
 
-      {/* Menu Title */}
-      <div className="absolute z-10 transform -translate-x-1/2 top-4 left-1/2">
-        <div
-          className="px-8 py-2 text-2xl font-bold text-white bg-orange-500 border-4 border-orange-400 shadow-lg rounded-2xl landscape:text-xl"
-          style={{
-            transform: "perspective(300px) rotateX(15deg)",
-            transformStyle: "preserve-3d",
-          }}
-        >
-          MENU
-        </div>
-      </div>
+
 
       {/* Main Modal */}
       <div className="flex flex-col items-center mt-20">
@@ -99,7 +88,7 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
             {/* Modal Header */}
             <div className="mb-1 text-center landscape:mb-4">
               <div className="inline-block px-6 py-3 text-xl font-bold text-white bg-orange-500 shadow-lg rounded-2xl landscape:text-lg">
-                SIAPA NAMAMU?
+                Siapa namamu?
               </div>
             </div>
 
@@ -110,7 +99,7 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="KETIK..."
+                placeholder="Ketik..."
                 maxLength={20}
                 className="w-full px-6 py-4 text-lg font-bold text-center text-orange-500 placeholder-orange-300 transition-all duration-200 bg-white border-2 border-orange-200 rounded-full landscape:py-3 landscape:px-4 landscape:text-base focus:outline-none focus:ring-4 focus:ring-orange-300"
                 autoFocus
@@ -120,7 +109,7 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
             {/* Instructions */}
             <div className="mb-6 text-center landscape:mb-4">
               <p className="text-xl font-bold leading-relaxed text-white landscape:text-lg">
-                TOLONG KETIK NAMAMU UNTUK MEMULAI PERMAINAN
+                Tolong ketik namamu untuk memulai permainan
               </p>
             </div>
           </div>
@@ -131,7 +120,7 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
           <button
             onClick={handleSubmit}
             disabled={playerName.trim().length < 2}
-            className={`font-bold py-4 landscape:py-3 px-12 landscape:px-8 rounded-2xl text-xl landscape:text-lg shadow-lg transform transition-all duration-300 border-4 ${
+            className={`font-bold py-2 landscape:py-1 px-2 landscape:px-2 rounded-2xl text-xl landscape:text-lg shadow-lg transform transition-all duration-300 border-4 ${
               playerName.trim().length >= 2
                 ? "bg-orange-600 hover:bg-orange-700 text-white hover:scale-105 active:scale-95 border-orange-500"
                 : "bg-orange-600 text-orange-100 cursor-not-allowed border-orange-500"
@@ -145,7 +134,10 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
                 : {}
             }
           >
-            NEXT
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-10">
+              <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm4.28 10.28a.75.75 0 0 0 0-1.06l-3-3a.75.75 0 1 0-1.06 1.06l1.72 1.72H8.25a.75.75 0 0 0 0 1.5h5.69l-1.72 1.72a.75.75 0 1 0 1.06 1.06l3-3Z" clipRule="evenodd" />
+            </svg>
+
           </button>
         </div>
       </div>

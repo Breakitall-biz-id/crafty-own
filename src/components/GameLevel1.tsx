@@ -541,13 +541,12 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     );
   };
 
-
   return (
     <>
       <BaseGameLayout
         onNavigate={onNavigate}
         onShowInstructions={() => setShowInstructions(true)}
-        title="MASUKAN BUAH KEDALAM KERANJANG YANG TEPAT!"
+        title="Level 1: Masukan buah ke dalam keranjang yang tepat!"
         gameAreaRef={gameAreaRef}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -566,21 +565,23 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
       <InstructionModal
         isOpen={showInstructions}
         onClose={startGame}
-        title="PETUNJUK"
+        title="Petunjuk"
         imageSrc="/images/petunjuk/level1.png"
-        description="LETAKKAN BUAH DI KERANJANG SESUAI DENGAN WARNANYA"
+        description="Letakan buah ke dalam keranjang sesuai dengan warnanya!"
       />
 
-      { showResults && <>
-        <GameResultModal
-          isOpen={showResults}
-          level={1}
-          stars={stars}
-          timeElapsed={timeElapsed}
-          mistakes={mistakes}
-          onNextLevel={handleNextLevel}
-        />
-      </>}
+      {showResults && (
+        <>
+          <GameResultModal
+            isOpen={showResults}
+            level={1}
+            stars={stars}
+            timeElapsed={timeElapsed}
+            mistakes={mistakes}
+            onNextLevel={handleNextLevel}
+          />
+        </>
+      )}
     </>
   );
 };

@@ -513,13 +513,12 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
     onNextLevel();
   };
 
-
   return (
     <>
       <BaseGameLayout
         onNavigate={onNavigate}
         onShowInstructions={() => setShowInstructions(true)}
-        title="POTONG BUAH APEL!"
+        title="Level 3: Potong buah apel!"
         gameAreaRef={gameAreaRef}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -579,8 +578,6 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
         {/* Cut lines visualization */}
         {renderCutLines()}
 
-
-
         {/* Progress indicator */}
         <div className="absolute flex space-x-2 transform -translate-x-1/2 bottom-4 left-1/2">
           {cutLines.map((line, index) => (
@@ -601,12 +598,12 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
       <InstructionModal
         isOpen={showInstructions}
         onClose={startGame}
-        title="PETUNJUK"
+        title="Petunjuk"
         imageSrc="/images/petunjuk/level3.png"
-        description="GERAKAN JARI DARI ATAS KE BAWAH MENGIKUTI GARIS PUTUS-PUTUS"
+        description="Gerakan jari dari atas ke bawah mengikuti garis putus-putus"
       />
 
-       {showResults && (
+      {showResults && (
         <>
           <GameResultModal
             isOpen={showResults}

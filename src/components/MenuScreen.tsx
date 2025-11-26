@@ -1,29 +1,40 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useSound } from "../hooks/useSound";
 import { Screen } from "../types/GameTypes";
 
 interface MenuScreenProps {
   onNavigate: (screen: Screen) => void;
+  soundEnabled: boolean;
 }
 
-const MenuScreen: React.FC<MenuScreenProps> = ({ onNavigate }) => {
+const MenuScreen: React.FC<MenuScreenProps> = ({ onNavigate, soundEnabled }) => {
+  const { loop, stop, unlock } = useSound(soundEnabled);
+
+  useEffect(() => {
+    if (soundEnabled) {
+      const playBgm = async () => {
+        try {
+          await unlock();
+          loop("bgm", { volume: 0.4 });
+        } catch {
+          // Ignore autoplay restrictions
+        }
+      };
+      playBgm();
+    } else {
+      stop("bgm");
+    }
+
+    // Cleanup: stop music when component unmounts
+    return () => {
+      stop("bgm");
+    };
+  }, [soundEnabled, loop, stop, unlock]);
   return (
     <div
       className="relative flex flex-col items-center justify-center min-h-screen px-4 overflow-hidden bg-center bg-no-repeat bg-cover"
       style={{ backgroundImage: "url(/images/bg-menu.png)" }}
     >
-      {/* Menu Title */}
-      <div className="mb-8 landscape:mb-6">
-        <div
-          className="px-8 py-2 text-2xl font-bold text-white bg-orange-500 border-4 border-orange-400 shadow-lg rounded-2xl landscape:text-xl"
-          style={{
-            transform: "perspective(300px) rotateX(15deg)",
-            transformStyle: "preserve-3d",
-          }}
-        >
-          MENU
-        </div>
-      </div>
-
       {/* Menu Options */}
       <div className="flex items-center justify-center gap-8 landscape:gap-6 landscape:scale-90 portrait:flex-col portrait:gap-8">
         {/* About Button */}

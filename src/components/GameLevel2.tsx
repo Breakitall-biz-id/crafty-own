@@ -542,7 +542,7 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
       <BaseGameLayout
         onNavigate={onNavigate}
         onShowInstructions={() => setShowInstructions(true)}
-        title="COCOKKAN BUAH DENGAN BAYANGANNYA!"
+        title="Level 2: Cocokan buah dengan bayangannya!"
         gameAreaRef={gameAreaRef}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -574,9 +574,9 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
       <InstructionModal
         isOpen={showInstructions}
         onClose={startGame}
-        title="PETUNJUK"
+        title="Petunjuk"
         imageSrc="/images/petunjuk/level2.png"
-        description="LETAKKAN BUAH SESUAI DENGAN BAYANGANNYA"
+        description="Cocokan buah dengan bayangannya!"
       />
 
       {showResults && (

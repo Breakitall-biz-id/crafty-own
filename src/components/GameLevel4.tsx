@@ -241,13 +241,12 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     return () => clearTimeout(t);
   }, [completed, play, stop]);
 
-
   return (
     <>
       <BaseGameLayout
         onNavigate={onNavigate}
         onShowInstructions={() => setShowInstructions(true)}
-        title="GAMBAR BUAH APEL!"
+        title="Level 4: Gambar buah apel!"
       >
         {/* Drawing area */}
         <div className="flex items-center justify-center flex-1 w-full h-full px-2 pt-2 pb-8">
@@ -300,9 +299,9 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
       <InstructionModal
         isOpen={showInstructions}
         onClose={startGame}
-        title="PETUNJUK"
+        title="Level 4: Gambar buah apel!"
         imageSrc="/images/petunjuk/level4.png"
-        description="GERAKAN JARI MENGIKUTI GARIS PUTUS-PUTUS"
+        description="Gerakan jari mengikuti garis putus-putus, jika sudah selesai tekan tanda✅ "
       />
 
       <GameResultModal
@@ -332,9 +331,9 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
         <InstructionModal
           isOpen={showInstructions}
           onClose={handleStart}
-          title="Level 4: Ikuti Garis Apel"
+          title="Petunjuk"
           imageSrc="/images/petunjuk/level4.png"
-          description="Ikuti garis bentuk apel dengan tepat. Semakin akurat, semakin banyak bintang yang kamu dapatkan!"
+          description="Gambar buah apel!"
         />
       )}
     </>

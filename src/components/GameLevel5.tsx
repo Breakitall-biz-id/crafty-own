@@ -82,7 +82,7 @@ export default function GameLevel5({
 
     const rects = clonedSvg.querySelectorAll("rect");
 
-    rects.forEach(rect => {
+    rects.forEach((rect) => {
       if (
         rect.getAttribute("x") === "0" &&
         rect.getAttribute("y") === "0" &&
@@ -92,7 +92,6 @@ export default function GameLevel5({
         rect.parentNode?.removeChild(rect);
       }
     });
-
 
     return new XMLSerializer().serializeToString(clonedSvg);
   };
@@ -109,8 +108,6 @@ export default function GameLevel5({
 
   useEffect(() => {
     if (!gameStarted || gameCompleted) return;
-
-
   }, [fills, gameStarted, gameCompleted, soundEnabled, sound, paintableIds]);
 
   const paint = (id: string) => {
@@ -152,7 +149,7 @@ export default function GameLevel5({
     const { x, y } = getCoordinates(e);
     setIsDrawing(true);
     setCurrentPath(`M ${x} ${y}`);
-    setCurrentPathColor('#222');
+    setCurrentPathColor("#222");
     setLastPoint({ x, y });
 
     // Prevent default untuk mencegah scrolling
@@ -210,7 +207,7 @@ export default function GameLevel5({
   return (
     <>
       <BaseGameLayout
-        title="Level 5: Mewarnai Papercraft"
+        title="Level 5: Warnai pola buah apel!"
         onNavigate={onNavigate}
         onShowInstructions={() => setShowInstructions(true)}
       >
@@ -439,9 +436,9 @@ export default function GameLevel5({
         <InstructionModal
           isOpen={showInstructions}
           onClose={handleStart}
-          title="Level 5: Mewarnai Papercraft"
+          title="Petunjuk"
           imageSrc="/images/petunjuk/level5.png"
-          description="Warnai semua bagian papercraft dengan 3 warna. Garis lipatan hanya petunjuk, tidak bisa diwarnai."
+          description="Warnailah gambar papercraft sesuai warna yang kamu suka, lalu tekan tanda ✅ jika sudah selesai."
         />
       )}
 
