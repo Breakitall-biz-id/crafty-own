@@ -1,4 +1,3 @@
-import React from "react";
 
 interface Level5ExportA4Props {
   playerName: string;
@@ -30,12 +29,12 @@ export default function Level5ExportA4({
       {/* Header Nama & Hasil */}
       <div
         style={{
-          border: "3px dotted #222",
-          borderRadius: "32px",
-          margin: "32px auto 0 auto",
-          width: "90%",
-          padding: "24px 32px",
-          fontSize: "2rem",
+          border: "2px dotted #222",
+          borderRadius: "25px",
+          margin: "10px auto 0 auto",
+          width: "80%",
+          padding: "8px 10px",
+          fontSize: "1rem",
           fontFamily: "inherit",
           background: "#fff",
         }}
@@ -45,7 +44,7 @@ export default function Level5ExportA4({
         </div>
         <div>
           Hasil : <span style={{ fontWeight: 700 }}>{stars ?? "...."}</span>
-          <span style={{ fontSize: "2rem", marginLeft: 8 }}>⭐</span>
+          <span style={{ fontSize: "1rem", marginLeft: 8 }}>⭐</span>
         </div>
       </div>
 
@@ -66,6 +65,7 @@ export default function Level5ExportA4({
       >
         <div
           style={{
+            marginTop: "32px",
             width: "100%",
             height: "100%",
             display: "flex",
@@ -82,11 +82,11 @@ export default function Level5ExportA4({
         />
         <style>{`
           .svg-artwork-wrapper svg {
-            width: 550px !important;
-            height: 800px !important;
+            width: 570px !important;
+            height: 870px !important;
             max-width: none !important;
             max-height: none !important;
-            transform: rotate(90deg) scale(1.5);
+            transform: rotate(90deg) scale(1.6);
             display: block;
             background: none !important;
           }

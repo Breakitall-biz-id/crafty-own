@@ -5,9 +5,14 @@ import { Screen } from "../types/GameTypes";
 interface MenuScreenProps {
   onNavigate: (screen: Screen) => void;
   soundEnabled: boolean;
+  onSoundToggle: () => void;
 }
 
-const MenuScreen: React.FC<MenuScreenProps> = ({ onNavigate, soundEnabled }) => {
+const MenuScreen: React.FC<MenuScreenProps> = ({
+  onNavigate,
+  soundEnabled,
+  onSoundToggle,
+}) => {
   const { loop, stop, unlock } = useSound(soundEnabled);
 
   useEffect(() => {
@@ -35,6 +40,20 @@ const MenuScreen: React.FC<MenuScreenProps> = ({ onNavigate, soundEnabled }) => 
       className="relative flex flex-col items-center justify-center min-h-screen px-4 overflow-hidden bg-center bg-no-repeat bg-cover"
       style={{ backgroundImage: "url(/images/bg-menu.png)" }}
     >
+      {/* Sound Toggle Button - Top Right */}
+      <button
+        onClick={onSoundToggle}
+        className="absolute flex items-center justify-center w-12 h-12 transition-all duration-200 transform bg-yellow-400 border-2 border-yellow-300 rounded-full shadow-lg top-4 right-4 landscape:w-20 landscape:h-20 hover:bg-yellow-500 hover:scale-105 active:scale-95"
+      >
+        <img
+          src="/images/sound-icon.png"
+          alt="Sound"
+          className={`w-6 h-6 landscape:w-16 landscape:h-16 ${
+            !soundEnabled ? "opacity-50" : ""
+          }`}
+        />
+      </button>
+
       {/* Menu Options */}
       <div className="flex items-center justify-center gap-8 landscape:gap-6 landscape:scale-90 portrait:flex-col portrait:gap-8">
         {/* About Button */}
@@ -49,7 +68,9 @@ const MenuScreen: React.FC<MenuScreenProps> = ({ onNavigate, soundEnabled }) => 
               className="object-contain w-16 h-16 landscape:w-20 landscape:h-20"
             />
           </button>
-          <span className="relative px-6 py-1 text-sm font-bold bg-yellow-400 border-2 border-yellow-300 rounded-full shadow-lg -top-5 text-amber-800">
+          <span 
+          onClick={() => onNavigate("about")}
+          className="relative px-6 py-1 text-sm font-bold bg-yellow-400 border-2 border-yellow-300 rounded-full shadow-lg -top-5 text-amber-800">
             Tentang
           </span>
         </div>
@@ -67,13 +88,14 @@ const MenuScreen: React.FC<MenuScreenProps> = ({ onNavigate, soundEnabled }) => 
             />
           </button>
           <span
+            onClick={() => onNavigate("nameInput")}
             className="relative px-6 py-2 text-lg font-bold text-white bg-orange-500 border-4 border-orange-400 shadow-lg rounded-2xl -top-10"
             style={{
               transform: "perspective(300px) rotateX(-10deg)",
               transformStyle: "preserve-3d",
             }}
           >
-            MAINKAN
+           Mainkan
           </span>
         </div>
 
@@ -89,7 +111,9 @@ const MenuScreen: React.FC<MenuScreenProps> = ({ onNavigate, soundEnabled }) => 
               className="object-contain w-16 h-16 landscape:w-20 landscape:h-20"
             />
           </button>
-          <span className="relative px-6 py-1 text-sm font-bold text-white bg-blue-400 border-2 border-blue-300 rounded-full shadow-lg -top-4">
+          <span 
+          onClick={() => onNavigate("profile")}
+          className="relative px-6 py-1 text-sm font-bold text-white bg-blue-400 border-2 border-blue-300 rounded-full shadow-lg -top-4">
             Profil
           </span>
         </div>

@@ -35,7 +35,7 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   onSoundToggle,
   playerName,
 }) => {
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [drawing, setDrawing] = useState(false);
   const [userPath, setUserPath] = useState<string>("");
@@ -50,13 +50,13 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
   const svgRef = useRef<SVGSVGElement>(null);
   const { play, stop, unlock } = useSound(soundEnabled);
 
-  const handleStart = () => {
-    setGameStarted(true);
-    setShowInstructions(false);
-    if (soundEnabled) {
-      play("start");
+  // Auto start game when component mounts
+  useEffect(() => {
+    if (!gameStarted) {
+      setGameStarted(true);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ===== Helpers =====
   function estimatePathLength(path: string): number {
@@ -145,27 +145,6 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
     return { x, y };
   }
 
-  // ===== Game flow =====
-  const startGame = async () => {
-    if (soundEnabled) {
-      try {
-        await unlock();
-      } catch {
-        // Ignore unlock errors
-      }
-      play("start");
-      play("bgm");
-    }
-    setShowInstructions(false);
-    setDrawing(false);
-    setUserPath("");
-    setCompleted(false);
-    setStartTime(null);
-    setEndTime(null);
-    setStars(null);
-    setShowResults(false);
-  };
-
   const handlePointerDown = (e: React.PointerEvent) => {
     if (completed || showInstructions || !gameStarted) return;
     setDrawing(true);
@@ -235,11 +214,13 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
 
   useEffect(() => {
     if (!completed) return;
-    play("complete");
-    stop("bgm");
+    if (soundEnabled) {
+      play("complete");
+      // Don't stop BGM - let it continue to next level
+    }
     const t = setTimeout(() => setShowResults(true), 1000);
     return () => clearTimeout(t);
-  }, [completed, play, stop]);
+  }, [completed, play, stop, soundEnabled]);
 
   return (
     <>
@@ -298,10 +279,10 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
 
       <InstructionModal
         isOpen={showInstructions}
-        onClose={startGame}
-        title="Level 4: Gambar buah apel!"
+        onClose={() => setShowInstructions(false)}
+        title="Petunjuk:"
         imageSrc="/images/petunjuk/level4.png"
-        description="Gerakan jari mengikuti garis putus-putus, jika sudah selesai tekan tanda✅ "
+        description="Gambar buah apel!"
       />
 
       <GameResultModal
@@ -330,8 +311,8 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
       {showInstructions && (
         <InstructionModal
           isOpen={showInstructions}
-          onClose={handleStart}
-          title="Petunjuk"
+          onClose={() => setShowInstructions(false)}
+          title="Petunjuk:"
           imageSrc="/images/petunjuk/level4.png"
           description="Gambar buah apel!"
         />

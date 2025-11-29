@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import SplashScreen from "./components/SplashScreen";
 import MenuScreen from "./components/MenuScreen";
 import NameInputScreen from "./components/NameInputScreen";
+import AboutScreen from "./components/AboutScreen";
+import ProfileScreen from "./components/ProfileScreen";
+import PanduanScreen from "./components/PanduanScreen";
 import GameLevel1 from "./components/GameLevel1";
 import GameLevel2 from "./components/GameLevel2";
 import GameLevel3 from "./components/GameLevel3";
@@ -143,16 +146,26 @@ function App() {
       case "splash":
         return <SplashScreen onStart={() => navigateTo("menu")} />;
       case "menu":
-        return <MenuScreen onNavigate={navigateTo} soundEnabled={gameState.soundEnabled} />;
+        return (
+          <MenuScreen
+            onNavigate={navigateTo}
+            soundEnabled={gameState.soundEnabled}
+            onSoundToggle={handleSoundToggle}
+          />
+        );
       case "nameInput":
         return (
           <NameInputScreen
             onNavigate={navigateTo}
             onNameSubmit={handleNameSubmit}
-            soundEnabled={gameState.soundEnabled}
-            onSoundToggle={handleSoundToggle}
           />
         );
+      case "about":
+        return <AboutScreen onNavigate={navigateTo} />;
+      case "profile":
+        return <ProfileScreen onNavigate={navigateTo} />;
+      case "panduan":
+        return <PanduanScreen onNavigate={navigateTo} />;
       case "level1":
         return (
           <GameLevel1
@@ -238,6 +251,7 @@ function App() {
             totalStars={totalStars}
             onNavigate={navigateTo}
             level5Artwork={level5Artwork}
+            soundEnabled={gameState.soundEnabled}
           />
         );
       }

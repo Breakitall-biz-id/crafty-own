@@ -4,15 +4,11 @@ import { Screen } from "../types/GameTypes";
 interface NameInputScreenProps {
   onNavigate: (screen: Screen) => void;
   onNameSubmit: (name: string) => void;
-  soundEnabled: boolean;
-  onSoundToggle: () => void;
 }
 
 const NameInputScreen: React.FC<NameInputScreenProps> = ({
   onNavigate,
   onNameSubmit,
-  soundEnabled,
-  onSoundToggle,
 }) => {
   const [playerName, setPlayerName] = useState("");
   const [isShaking, setIsShaking] = useState(false);
@@ -60,22 +56,7 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
           />
         </button>
 
-        {/* Sound Toggle */}
-        <button
-          onClick={onSoundToggle}
-          className="flex items-center justify-center w-12 h-12 transition-all duration-200 transform bg-yellow-400 border-2 border-yellow-300 rounded-full shadow-lg landscape:w-20 landscape:h-20 hover:bg-yellow-500 hover:scale-105 active:scale-95"
-        >
-          <img
-            src="/images/sound-icon.png"
-            alt="Sound"
-            className={`w-6 h-6 landscape:w-16 landscape:h-16 ${
-              !soundEnabled ? "opacity-50" : ""
-            }`}
-          />
-        </button>
       </div>
-
-
 
       {/* Main Modal */}
       <div className="flex flex-col items-center mt-20">
@@ -134,10 +115,18 @@ const NameInputScreen: React.FC<NameInputScreenProps> = ({
                 : {}
             }
           >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="size-10">
-              <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm4.28 10.28a.75.75 0 0 0 0-1.06l-3-3a.75.75 0 1 0-1.06 1.06l1.72 1.72H8.25a.75.75 0 0 0 0 1.5h5.69l-1.72 1.72a.75.75 0 1 0 1.06 1.06l3-3Z" clipRule="evenodd" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="size-10"
+            >
+              <path
+                fillRule="evenodd"
+                d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm4.28 10.28a.75.75 0 0 0 0-1.06l-3-3a.75.75 0 1 0-1.06 1.06l1.72 1.72H8.25a.75.75 0 0 0 0 1.5h5.69l-1.72 1.72a.75.75 0 1 0 1.06 1.06l3-3Z"
+                clipRule="evenodd"
+              />
             </svg>
-
           </button>
         </div>
       </div>

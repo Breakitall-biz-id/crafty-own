@@ -29,7 +29,7 @@ export default function GameLevel5({
   const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [stars] = useState(3);
 
@@ -67,6 +67,14 @@ export default function GameLevel5({
 
   const [fills, setFills] = useState<Record<string, string>>({});
   const sound = useSound(soundEnabled);
+
+  // Auto start game when component mounts
+  useEffect(() => {
+    if (!gameStarted) {
+      setGameStarted(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Fungsi untuk menyimpan hasil artwork sebagai SVG string
   const captureArtwork = (): string => {
@@ -188,22 +196,6 @@ export default function GameLevel5({
     setLastPoint(null);
   };
 
-  const handleRestart = () => {
-    setFills({});
-    setDrawingPaths([]);
-    setCurrentPath("");
-    setGameCompleted(false);
-    setGameStarted(false);
-    setShowInstructions(true);
-    setShowResults(false);
-    setTimeElapsed(0);
-  };
-  const handleStart = () => {
-    setGameStarted(true);
-    setShowInstructions(false);
-    if (soundEnabled) sound.play("start");
-  };
-
   return (
     <>
       <BaseGameLayout
@@ -274,6 +266,13 @@ export default function GameLevel5({
               onPointerLeave={() => setIsDrawing(false)}
               style={{ touchAction: "none" }}
             >
+
+               <path 
+                  d="M309 221L319 271L349 278.5L381.5 243.5L406.5 236L434.5 180L425 157.5L436 135L413.5 128V82.5L369.5 71L344.5 108.5L323.5 102.5L322 127.5" 
+                  stroke="#535151" 
+                  fill="transparent"
+                  strokeWidth={1.5}
+                 />
               {/* === Bidang bisa diwarnai === */}
               <g id="faces" stroke="#333" strokeWidth={1.5} fillRule="evenodd">
                 <path
@@ -290,7 +289,7 @@ export default function GameLevel5({
                 />
                 <path
                   id="badan-1"
-                  d="M42 131L45.5 132.533L118 162.5L157.5 245.5L156 303.5L146 309L93 289.5L31.5 218.5L33 137.5"
+                  d="M157.5 245.5 156 303.5 146 309 93 289.5 31.5 218.5 33 137.5 42 131 118 162"
                   fill={fills["badan-1"] ?? "transparent"}
                   onPointerDown={() => paint("badan-1")}
                 />
@@ -311,12 +310,14 @@ export default function GameLevel5({
                   d="M265.5 61.5L220 127.5L231.5 222L263.5 266.5L274.5 267.5L308.5 220.5L321.5 127.5L276.5 61.5H265.5Z"
                   fill={fills["badan-3"] ?? "transparent"}
                   onPointerDown={() => paint("badan-3")}
+                  stroke="transparent"
                 />
                 <path
                   id="badan-4"
-                  d="M344.5 109L323.5 102.5L322 128L309 221.5L319 271L349 278.5L381.5 243.5L406.5 236L434.5 180L425 157.5L436 135L413.5 128V82.5L369.5 71L344.5 109Z"
+                  d="M344.5 109 335 117 320 129 308 221 319 271 349 278.5 381.5 243.5 391 224.5 417.5 173 425 157.5 417.5 138.5 413.5 128V82.5L369.5 71 344.5 109Z"
                   fill={fills["badan-4"] ?? "transparent"}
                   onPointerDown={() => paint("badan-4")}
+                  stroke="transparent"
                 />
                 <path
                   id="tangkai-kiri"
@@ -332,10 +333,46 @@ export default function GameLevel5({
                 />
                 <path
                   id="badan-2"
-                  d="M168 72.5L125 88L125.5 132.5L106.5 138.5L158 245.5L194.5 281.5L223.5 271.5L231.5 222.5L216.5 103.5L193 111L168 72.5Z"
+                  d="M157.43 246 193.93 282 222.93 272 232 223 220 128 207 120 193 110 167.43 73 124.43 88.5V132.5L120.93 146 117 162"
                   fill={fills["badan-2"] ?? "transparent"}
+                  stroke="transparent"
                   onPointerDown={() => paint("badan-2")}
                 />
+              </g>
+
+
+              <g>
+                {/* === Outline utama === */}
+                <path
+                  d="M118 163L106.5 138.5L125.5 132.5V88L168 73L193.5 111L216.5 103.5L219.5 128"
+                  stroke="#535151" 
+                  fill="transparent"
+                  strokeWidth={1.5}/>
+
+                 <path
+                  d="M158.5 246.5L194 281L223.5 272L232.5 222"
+                  stroke="#535151" 
+                  fill="transparent"
+                  strokeWidth={1.5}/>
+
+
+                  <path
+                  d="M158.5 246.5L194 281L223.5 272L232.5 222"
+                  stroke="#535151" 
+                  fill="transparent"
+                  strokeWidth={1.5}/>
+
+                  <path
+                  d="M220 127.5L265.5 61.5H276.5L321.5 127.5 M232.5 223L263.5 266.5L274.5 267.5L308.5 221"
+                  stroke="#535151" 
+                  fill="transparent"
+                  strokeWidth={1.5}/>
+
+                 
+
+
+
+                  
               </g>
 
               {/* === Mata (dekorasi) === */}
@@ -369,7 +406,7 @@ export default function GameLevel5({
                 pointerEvents="none"
               >
                 <path d="M35 137.5L43 132" />
-                <path d="M119.5 164L157 241.5" />
+                <path d="M117.5 164L155 241.5" />
                 <path d="M121 161L217 129.5" />
                 <path d="M35 189.5L89 153.5" />
                 <path d="M35.5 218.5L116.5 163.5" />
@@ -421,7 +458,10 @@ export default function GameLevel5({
             <button
               onClick={() => {
                 setGameCompleted(true);
-                if (soundEnabled) sound.play("success");
+                if (soundEnabled) {
+                  // Don't stop BGM - will be stopped when download is complete
+                  sound.play("success");
+                }
                 setTimeout(() => setShowResults(true), 800);
               }}
               className="w-12 h-12 text-white bg-green-500 rounded-full shadow-lg hover:bg-green-600"
@@ -435,7 +475,7 @@ export default function GameLevel5({
       {showInstructions && (
         <InstructionModal
           isOpen={showInstructions}
-          onClose={handleStart}
+          onClose={() => setShowInstructions(false)}
           title="Petunjuk"
           imageSrc="/images/petunjuk/level5.png"
           description="Warnailah gambar papercraft sesuai warna yang kamu suka, lalu tekan tanda ✅ jika sudah selesai."

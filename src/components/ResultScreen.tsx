@@ -3,12 +3,14 @@ import { Screen } from "../types/GameTypes";
 import Level5ExportA4 from "./Level5ExportA4";
 import jsPDF from "jspdf";
 import domtoimage from "dom-to-image";
+import { useSound } from "../hooks/useSound";
 
 interface ResultScreenProps {
   playerName: string;
   totalStars: number;
   onNavigate: (screen: Screen) => void;
   level5Artwork?: string;
+  soundEnabled: boolean;
 }
 
 const getTitle = (stars: number) => {
@@ -34,38 +36,97 @@ const ResultScreen: React.FC<ResultScreenProps> = ({
   const [isDownloading, setIsDownloading] = useState(false);
 
   const handleDownload = async () => {
-    if (exportA4Ref.current) {
-      setIsDownloading(true);
-      await new Promise((r) => setTimeout(r, 50));
-      try {
-        const dataUrl = await domtoimage.toJpeg(exportA4Ref.current, {
-          quality: 1,
-          bgcolor: "#fff",
-        });
+    if (!exportA4Ref.current) {
+      alert("Tidak dapat menemukan konten untuk di-download.");
+      return;
+    }
 
-        const pdf = new jsPDF({
-          orientation: "portrait",
-          unit: "mm",
-          format: "a4",
-        });
+    // Store references for closure access at the beginning
+    const isSoundEnabled = true;
+    const stopMusic = stop;
+    const navigate = onNavigate;
 
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const img = new window.Image();
-        img.src = dataUrl;
-        img.onload = function () {
+    setIsDownloading(true);
+    
+    try {
+      // Wait a bit for rendering
+      await new Promise((r) => setTimeout(r, 100));
+      
+      // Generate image from DOM
+      const dataUrl = await domtoimage.toJpeg(exportA4Ref.current, {
+        quality: 0.95,
+        bgcolor: "#ffffff",
+        width: 794,
+        height: 1123,
+        style: {
+          transform: "scale(1)",
+          transformOrigin: "top left",
+        }
+      });
+
+      // Create PDF
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      
+      // Create image and handle both success and error cases
+      const img = new Image();
+      
+      img.onload = function () {
+        try {
           const imgWidth = pageWidth;
           const imgHeight = (img.height * pageWidth) / img.width;
-          pdf.addImage(dataUrl, "JPEG", 0, 0, imgWidth, imgHeight);
+          
+          // Ensure image fits in page
+          const finalHeight = Math.min(imgHeight, pageHeight);
+          
+          pdf.addImage(dataUrl, "JPEG", 0, 0, imgWidth, finalHeight);
+          
           const namaFile = `Papercraft-${
-            playerName ? playerName.toUpperCase().replace(/\s+/g, "") : "PEMAIN"
+            playerName ? playerName.toUpperCase().replace(/\s+/g, "_") : "PEMAIN"
           }.pdf`;
+          
           pdf.save(namaFile);
           setIsDownloading(false);
-        };
-      } catch (err) {
-        alert("Gagal membuat PDF. Silakan coba lagi.");
+          
+          // Stop background music when download is complete
+          if (isSoundEnabled) {
+            try {
+              stopMusic("bgm");
+            } catch (musicErr) {
+              console.log("Failed to stop music:", musicErr);
+            }
+          }
+          
+          // Navigasi ke halaman panduan setelah download berhasil
+          setTimeout(() => {
+            navigate("panduan");
+          }, 1000);
+          
+        } catch (pdfErr) {
+          console.error("PDF creation error:", pdfErr);
+          setIsDownloading(false);
+          alert("Gagal membuat PDF. Silakan coba lagi.");
+        }
+      };
+      
+      img.onerror = function () {
+        console.error("Image load error");
         setIsDownloading(false);
-      }
+        alert("Gagal memuat gambar. Silakan coba lagi.");
+      };
+      
+      img.src = dataUrl;
+      
+    } catch (err) {
+      console.error("Download error:", err);
+      setIsDownloading(false);
+      alert("Gagal membuat PDF. Silakan coba lagi.");
     }
   };
 

@@ -44,7 +44,7 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
   // playerName,
 }) => {
   const { play, loop, stop, unlock } = useSound(soundEnabled);
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
@@ -122,20 +122,14 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
   const leftPanelRef = useRef<HTMLDivElement>(null);
   const rightPanelRef = useRef<HTMLDivElement>(null);
 
-  const startGame = async () => {
-    if (soundEnabled) {
-      try {
-        await unlock();
-      } catch {
-        /* ignore */
-      }
-      play("start");
-      loop("bgm", { volume: 0.35 });
+  // Auto start game when component mounts
+  useEffect(() => {
+    if (!gameStarted) {
+      setGameStarted(true);
+      setStartTime(Date.now());
     }
-    setShowInstructions(false);
-    setGameStarted(true);
-    setStartTime(Date.now());
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Check completion whenever fruits/mistakes/time state changes
   useEffect(() => {
@@ -212,7 +206,7 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
     if (!gameCompleted) return;
     if (soundEnabled) {
       play("complete");
-      stop("bgm");
+      // Don't stop BGM - let it continue to next level
     }
     const t = setTimeout(() => setShowResults(true), 1000);
     return () => clearTimeout(t);
@@ -573,8 +567,8 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
       {/* Instruction Modal - Overlay */}
       <InstructionModal
         isOpen={showInstructions}
-        onClose={startGame}
-        title="Petunjuk"
+        onClose={() => setShowInstructions(false)}
+        title="Petunjuk:"
         imageSrc="/images/petunjuk/level2.png"
         description="Cocokan buah dengan bayangannya!"
       />

@@ -45,7 +45,7 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
   // playerName,
 }) => {
   const { play, stop, unlock } = useSound(soundEnabled);
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
@@ -167,6 +167,28 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     baskets[2].y = basketPositions[2].y;
   }, [baskets]);
 
+  // Auto start game when component mounts
+  useEffect(() => {
+    if (!gameStarted) {
+      setGameStarted(true);
+      setGameCompleted(false);
+      setShowResults(false);
+      
+      // Initialize music - start BGM that will continue throughout all levels
+      if (soundEnabled) {
+        try {
+          unlock();
+        } catch (error) {
+          // Ignore unlock errors
+          console.log('Audio unlock failed:', error);
+        }
+        play("start");
+        // Start background music
+        play("bgm");
+      }
+    }
+  }, [gameStarted, soundEnabled, unlock, play]);
+
   useEffect(() => {
     if (gameAreaRef.current) {
       requestAnimationFrame(() => initializePositions());
@@ -233,35 +255,6 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
     return fruitPositions[index];
   };
 
-  const startGame = async () => {
-    if (soundEnabled) {
-      try {
-        await unlock();
-      } catch {}
-      play("start");
-      play("bgm");
-    }
-
-    setShowInstructions(false);
-    setGameStarted(true);
-    setGameCompleted(false);
-    setShowResults(false);
-    setMistakes(0);
-    setStars(0);
-    setTimeElapsed(0);
-    setStartTime(Date.now());
-
-    setFruits((prev) =>
-      prev.map((fruit) => ({
-        ...fruit,
-        isPlaced: false,
-        isDragging: false,
-      }))
-    );
-
-    requestAnimationFrame(() => initializePositions());
-  };
-
   const calculateStars = (time: number, mistakeCount: number): number => {
     if (mistakeCount === 0 && time <= 10000) return 3;
     if (mistakeCount <= 1 && time <= 20000) return 2;
@@ -283,7 +276,7 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
       setShowResults(true);
       if (soundEnabled) {
         play("complete");
-        stop("bgm");
+        // Don't stop BGM - let it continue to next level
       }
     }
   }, [
@@ -564,10 +557,10 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
       {/* Instruction Modal - Overlay */}
       <InstructionModal
         isOpen={showInstructions}
-        onClose={startGame}
-        title="Petunjuk"
+        onClose={() => setShowInstructions(false)}
+        title="Petunjuk:"
         imageSrc="/images/petunjuk/level1.png"
-        description="Letakan buah ke dalam keranjang sesuai dengan warnanya!"
+        description="Masukan buah ke dalam keranjang yang tepat!"
       />
 
       {showResults && (

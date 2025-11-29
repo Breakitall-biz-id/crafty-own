@@ -42,7 +42,7 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
   onSoundToggle,
   // playerName,
 }) => {
-  const [showInstructions, setShowInstructions] = useState(true);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
@@ -92,35 +92,15 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
     },
   ]);
 
-  const startGame = async () => {
-    if (soundEnabled) {
-      try {
-        await unlock();
-      } catch {
-        /* ignore */
-      }
-      play("start");
-      play("bgm");
+  // Auto start game when component mounts
+  useEffect(() => {
+    if (!gameStarted) {
+      setGameStarted(true);
+      setStartTime(Date.now());
+      setCurrentLineIndex(0);
     }
-
-    setShowInstructions(false);
-    setGameStarted(true);
-    setStartTime(Date.now());
-    setCurrentLineIndex(0);
-
-    // Reset all states
-    setCutLines((prev) =>
-      prev.map((line) => ({
-        ...line,
-        isCompleted: false,
-        progress: 0,
-        accuracy: 100,
-      }))
-    );
-    setTouchPath([]);
-    setMistakes(0);
-    setOverallAccuracy(100);
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const calculateStars = (
     accuracy: number,
@@ -154,11 +134,13 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
   // After completion, play sound and show results with a delay
   useEffect(() => {
     if (!gameCompleted) return;
-    play("complete");
-    stop("bgm");
+    if (soundEnabled) {
+      play("complete");
+      // Don't stop BGM - let it continue to next level
+    }
     const t = setTimeout(() => setShowResults(true), 1000);
     return () => clearTimeout(t);
-  }, [gameCompleted, play, stop]);
+  }, [gameCompleted, play, stop, soundEnabled]);
 
   const isPointOnLine = (
     x: number,
@@ -597,7 +579,7 @@ const GameLevel3: React.FC<GameLevel3Props> = ({
 
       <InstructionModal
         isOpen={showInstructions}
-        onClose={startGame}
+        onClose={() => setShowInstructions(false)}
         title="Petunjuk"
         imageSrc="/images/petunjuk/level3.png"
         description="Gerakan jari dari atas ke bawah mengikuti garis putus-putus"
