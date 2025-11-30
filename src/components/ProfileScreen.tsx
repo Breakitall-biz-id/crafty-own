@@ -82,7 +82,7 @@ const ProfileScreen: React.FC<ProfileScreenProps> = ({ onNavigate }) => {
                 <div>
                   <span className="font-bold text-gray-800">Dosen Pembimbing:</span>
                   <div className="mt-2 ml-3 text-gray-700">
-                    <div>- Dr.Pramono, S.Pd, M.Or</div>
+                    <div>- Dr. Pramono, S.Pd, M.Or</div>
                     <div>- Dr. Yudithia Dian Putra, M.Pd., M.M.</div>
                   </div>
                 </div>
