@@ -570,7 +570,7 @@ const GameLevel2: React.FC<GameLevel2Props> = ({
         onClose={() => setShowInstructions(false)}
         title="Petunjuk:"
         imageSrc="/images/petunjuk/level2.png"
-        description="Cocokan buah dengan bayangannya!"
+        description="Letakkan buah sesuai dengan bayangannya."
       />
 
       {showResults && (
