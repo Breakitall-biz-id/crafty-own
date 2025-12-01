@@ -173,6 +173,7 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
       setGameStarted(true);
       setGameCompleted(false);
       setShowResults(false);
+      setStartTime(Date.now()); // Set start time when game begins
       
       // Initialize music - start BGM that will continue throughout all levels
       if (soundEnabled) {
@@ -256,8 +257,10 @@ const GameLevel1: React.FC<GameLevel1Props> = ({
   };
 
   const calculateStars = (time: number, mistakeCount: number): number => {
-    if (mistakeCount === 0 && time <= 10000) return 3;
-    if (mistakeCount <= 1 && time <= 20000) return 2;
+    // time is in milliseconds
+    if (mistakeCount === 0 && time <= 30000) return 3; // 30 seconds or less, no mistakes = 3 stars
+    if (mistakeCount <= 1 && time <= 60000) return 2;  // 1 minute or less, max 1 mistake = 2 stars
+    if (mistakeCount <= 3 && time <= 120000) return 2; // 2 minutes or less, max 3 mistakes = 2 stars
     return 1;
   };
 
