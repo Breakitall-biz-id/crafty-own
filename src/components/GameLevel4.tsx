@@ -227,7 +227,7 @@ const GameLevel4: React.FC<GameLevel4Props> = ({
       <BaseGameLayout
         onNavigate={onNavigate}
         onShowInstructions={() => setShowInstructions(true)}
-        title="Level 4: Gerakan jari mengikuti garis putus-putus membentuk gambar apel, jika sudah selesai tekan tanda ✅."
+        title="Gambar Buah Apel"
       >
         {/* Drawing area */}
         <div className="flex items-center justify-center flex-1 w-full h-full px-2 pt-2 pb-8">
